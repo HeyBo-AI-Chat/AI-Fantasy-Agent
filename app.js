@@ -1,0 +1,238 @@
+const A = window.APP;
+const hdrs = {
+  "Content-Type":"application/json",
+  "apikey": A.SUPABASE_ANON,
+  "Authorization": "Bearer " + A.SUPABASE_ANON
+};
+const el = s => document.querySelector(s);
+const $ = s => Array.from(document.querySelectorAll(s));
+
+/* ---------- Tabs ---------- */
+$(".tabbtn").forEach(b=>{
+  b.onclick = ()=>{
+    $(".tabbtn").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    const t = b.dataset.t;
+    ["draft","roster","lineup","scores","news","agent"].forEach(name=>{
+      el(`#tab-${name}`).classList.toggle("hide", name!==t);
+    });
+  };
+});
+
+/* ---------- Selectors ---------- */
+const years = [2020,2021,2022,2023,2024];
+const seasonSel = el("#season");
+seasonSel.innerHTML = years.map(y=>`<option ${y===A.SEASON_DEFAULT?"selected":""}>${y}</option>`).join("");
+const weekSel = el("#week");
+weekSel.innerHTML = Array.from({length:18},(_,i)=>i+1).map(w=>`<option ${w===A.WEEK_DEFAULT?"selected":""}>${w}</option>`).join("");
+
+/* ---------- Helpers ---------- */
+const qs = p => Object.entries(p).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join("&");
+const get = (url) => fetch(url, { headers: hdrs }).then(r=>r.json());
+const post = (url, body={}) => fetch(url,{ method:"POST", headers: hdrs, body: JSON.stringify(body)}).then(r=>r.json());
+const patch = (url, body={}) => fetch(url,{ method:"PATCH", headers: hdrs, body: JSON.stringify(body)}).then(r=>r.json());
+
+/* ---------- Voice (STT + TTS) ---------- */
+let TTS_ENABLED = false;
+let recognizing = false;
+let recognition = null;
+
+function speak(text) {
+  try {
+    if (!TTS_ENABLED) return;
+    if (!("speechSynthesis" in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1; u.pitch = 1; u.volume = 1; u.lang = "en-US";
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  } catch {}
+}
+function setupRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = "en-US";
+  r.interimResults = true;
+  r.continuous = true;
+  r.maxAlternatives = 1;
+
+  r.onstart = () => { recognizing = true; el("#voiceStatus").textContent = "Listening…"; };
+  r.onend   = () => { recognizing = false; el("#voiceStatus").textContent = "Mic idle"; };
+  r.onerror = (e) => { recognizing = false; el("#voiceStatus").textContent = `Mic error: ${e.error}`; };
+
+  let finalText = "";
+  r.onresult = (ev) => {
+    let interim = "";
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const res = ev.results[i];
+      if (res.isFinal) finalText += res[0].transcript;
+      else interim += res[0].transcript;
+    }
+    el("#agentInput").value = (finalText + " " + interim).trim();
+  };
+  return r;
+}
+function startListening() {
+  if (!recognition) recognition = setupRecognition();
+  if (!recognition) {
+    el("#voiceStatus").textContent = "Speech input not supported on this browser.";
+    return;
+  }
+  try { recognition.start(); } catch {}
+}
+function stopListening() { try { recognition && recognition.stop(); } catch {} }
+
+el("#btnTTS").onclick = () => {
+  TTS_ENABLED = !TTS_ENABLED;
+  el("#btnTTS").textContent = TTS_ENABLED ? "🔊 Speak: On" : "🔈 Speak: Off";
+  if (TTS_ENABLED) speak("Speech enabled.");
+};
+const micBtn = el("#btnMic");
+micBtn.addEventListener("touchstart", (e) => { e.preventDefault(); startListening(); micBtn.textContent = "🎙️ Listening"; }, {passive:false});
+micBtn.addEventListener("touchend",   (e) => { e.preventDefault(); micBtn.textContent = "🎤 Hold"; stopListening(); sendAgentIfReady(); }, {passive:false});
+micBtn.addEventListener("mousedown",  ()  => { startListening(); micBtn.textContent = "🎙️ Listening"; });
+micBtn.addEventListener("mouseup",    ()  => { micBtn.textContent = "🎤 Hold"; stopListening(); sendAgentIfReady(); });
+function sendAgentIfReady(){ const msg = el("#agentInput").value.trim(); if(msg) el("#btnAsk").click(); }
+
+/* ---------- Data Loads ---------- */
+async function loadDraft() {
+  const season = Number(seasonSel.value), week = Number(weekSel.value);
+  const url = `${A.SUPABASE_URL}/rest/v1/weekly_stats?` + qs({
+    select:"player_id,position,team_id,season,week,fantasy_ppr,players(player_name)",
+    "sport":"eq:nfl", "season":"eq:"+season, "week":"eq:"+week,
+    "order":"fantasy_ppr.desc", "limit":200
+  });
+  const data = await get(url);
+  el("#draftCount").textContent = data.length;
+  el("#draftList").innerHTML = data.map(row=>`
+    <div class="card">
+      <div class="row spread">
+        <div>
+          <div><b>${row.players?.player_name||row.player_id}</b></div>
+          <div class="badge">${row.team_id||""} · ${row.position||""}</div>
+        </div>
+        <div style="text-align:right">
+          <div><b>${Number(row.fantasy_ppr||0).toFixed(2)}</b> PPR</div>
+          <button class="btn muted" data-add="${row.player_id}" data-pos="${row.position||""}">Add</button>
+        </div>
+      </div>
+    </div>`).join("");
+  $("#draftList .btn").forEach(btn=>{
+    btn.onclick = async ()=>{
+      const player_id = btn.dataset.add, position = btn.dataset.pos;
+      const url = `${A.SUPABASE_URL}/rest/v1/team_roster`;
+      const body = { team_id:A.TEAM_ID, season:Number(seasonSel.value), player_id, position, acquired:"draft" };
+      await fetch(url,{method:"POST", headers:hdrs, body:JSON.stringify(body)});
+      await loadRoster();
+      alert("Added to roster");
+    };
+  });
+}
+async function loadRoster() {
+  const url = `${A.SUPABASE_URL}/rest/v1/team_roster?` + qs({
+    select:"player_id,position,players(player_name,team_id,position)",
+    "team_id":"eq:"+A.TEAM_ID, "season":"eq:"+Number(seasonSel.value)
+  });
+  const data = await get(url);
+  el("#rosterCount").textContent = data.length;
+  el("#rosterList").innerHTML = data.map(r=>`
+    <div class="card">
+      <div class="row spread">
+        <div>
+          <div><b>${r.players?.player_name||r.player_id}</b></div>
+          <div class="badge">${r.players?.team_id||""} · ${r.position||""}</div>
+        </div>
+        <div class="row" style="gap:6px">
+          <button class="btn" data-starter="${r.player_id}">Starter</button>
+          <button class="btn muted" data-bench="${r.player_id}">Bench</button>
+        </div>
+      </div>
+    </div>`).join("");
+  $("#rosterList [data-starter]").forEach(b=> b.onclick = ()=>{ starters.add(b.dataset.starter); bench.delete(b.dataset.starter); renderLineup(); });
+  $("#rosterList [data-bench]").forEach(b=> b.onclick = ()=>{ bench.add(b.dataset.bench); starters.delete(b.dataset.bench); renderLineup(); });
+}
+
+/* ---------- Lineup ---------- */
+const starters = new Set();
+const bench = new Set();
+function renderLineup(){
+  el("#starters").innerHTML = Array.from(starters).map(id=>`<div class="badge">${id}</div>`).join("") || `<div class="badge">No starters selected</div>`;
+  el("#bench").innerHTML    = Array.from(bench).map(id=>`<div class="badge">${id}</div>`).join("")    || `<div class="badge">No bench selected</div>`;
+}
+el("#btnSaveLineup").onclick = async ()=>{
+  const url = `${A.SUPABASE_URL}/rest/v1/weekly_lineups?` + qs({
+    "team_id":"eq:"+A.TEAM_ID, "season":"eq:"+Number(seasonSel.value), "week":"eq:"+Number(weekSel.value)
+  });
+  const body = { starters: Array.from(starters), bench: Array.from(bench) };
+  await patch(url, body);
+  alert("Lineup saved");
+};
+
+/* ---------- Scores ---------- */
+async function loadScores(){
+  const url = `${A.SUPABASE_URL}/rest/v1/team_week_scores?` + qs({
+    select:"team_id,season,week,points,breakdown",
+    "season":"eq:"+Number(seasonSel.value), "week":"eq:"+Number(weekSel.value)
+  });
+  const data = await get(url);
+  el("#scoresList").innerHTML = data.map(r=>`
+    <div class="card">
+      <div class="row spread"><b>${r.team_id}</b><b>${Number(r.points||0).toFixed(2)}</b></div>
+      <div class="badge">${Object.entries(r.breakdown||{}).slice(0,6).map(([pid,pts])=>`${pid}:${Number(pts).toFixed(1)}`).join(" · ")}</div>
+    </div>`).join("");
+}
+el("#btnCompute").onclick = async ()=>{
+  await post(`${A.FUNCS}/compute_week_scores`, {
+    league_id: A.LEAGUE_ID,
+    season: Number(seasonSel.value),
+    week: Number(weekSel.value)
+  });
+  await loadScores();
+};
+
+/* ---------- News ---------- */
+el("#btnRefreshNews").onclick = async ()=>{
+  await post(`${A.FUNCS}/refresh_injuries_and_news`, {}).catch(()=>{});
+  await loadNews();
+};
+async function loadNews(){
+  const url = `${A.SUPABASE_URL}/rest/v1/news_items?` + qs({
+    select:"published_at,source,title,url,impact_tag", "order":"published_at.desc", "limit":100
+  });
+  const data = await get(url);
+  el("#newsList").innerHTML = data.map(n=>`
+    <a class="card" href="${n.url}" target="_blank" rel="noopener">
+      <div><b>${n.source}</b> — <span class="badge">${new Date(n.published_at).toLocaleString()}</span></div>
+      <div>${n.title}</div>
+      <div class="badge">${n.impact_tag||"GENERAL"}</div>
+    </a>`).join("");
+}
+
+/* ---------- Agent ---------- */
+el("#btnAsk").onclick = async ()=>{
+  const msg = el("#agentInput").value.trim();
+  if(!msg) return;
+  const thinking = "Thinking…";
+  el("#agentReply").textContent = thinking;
+  speak(thinking);
+  const res = await post(`${A.FUNCS}/agent_router`, {
+    message: msg,
+    sport: "nfl",
+    season: Number(seasonSel.value),
+    week: Number(weekSel.value),
+    task: "reason"
+  });
+  const reply = (res && (res.reply || res.message || res.text)) || "No reply.";
+  el("#agentReply").textContent = reply;
+  speak(reply);
+};
+
+/* ---------- Init ---------- */
+(async function init(){
+  await loadDraft();
+  await loadRoster();
+  await loadScores();
+  await loadNews().catch(()=>{});
+  seasonSel.onchange = ()=>{ loadDraft(); loadRoster(); loadScores(); };
+  weekSel.onchange   = ()=>{ loadDraft(); loadScores(); };
+})();

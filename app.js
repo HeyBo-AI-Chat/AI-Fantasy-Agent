@@ -205,9 +205,25 @@ async function refreshTeamPoints() {
     .order('created_at', { ascending: false })
     .limit(50);
 
-  if (error) { console.log(error); return; }
-  // TODO: draw into your "Scores" tab or a team total widget
+if (error) {
+    if (box) box.innerHTML = 'Error: ' + error.message;
+    return;
+  }
+
+  // Render into the SCORES tab container:
+  if (box) {
+    box.innerHTML = (data && data.length)
+      ? data.map(r => `
+          <div class="row" style="justify-content:space-between">
+            <div>${r.player_id}</div>
+            <div><b>${Number(r.total_points).toFixed(1)}</b></div>
+          </div>
+        `).join('')
+      : '<i>No scores yet.</i>';
+  }
 }
+
+// call once on load and keep the realtime subscription active
 subscribeTeamPoints();
 refreshTeamPoints();
 /* ---------- Helpers ---------- */

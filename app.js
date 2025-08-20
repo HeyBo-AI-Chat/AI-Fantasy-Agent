@@ -44,6 +44,32 @@ const hdrs = {
   "apikey": A.SUPABASE_ANON,
   "Authorization": "Bearer " + A.SUPABASE_ANON
 };
+// ---------- Tabs ----------
+const TABS = ['draft','roster','lineup','scores','news','agent'];
+
+function showTab(t) {
+  TABS.forEach(name => {
+    const sec = document.getElementById(`tab-${name}`);
+    const btn = document.querySelector(`.tabbtn[data-t="${name}"]`);
+    if (sec) sec.classList.toggle('hidden', name !== t);
+    if (btn) btn.classList.toggle('active', name === t);
+  });
+
+  // Lazy-load content per tab if you want
+  if (t === 'roster' && typeof loadSources === 'function') {
+    loadSources();
+  }
+  if (t === 'scores' && typeof refreshTeamPoints === 'function') {
+    refreshTeamPoints();
+  }
+}
+
+document.querySelectorAll('.tabbtn').forEach(b => {
+  b.addEventListener('click', () => showTab(b.dataset.t));
+});
+
+// default tab
+showTab('draft');
 
 // ---------- Tabs ----------
 const el = s => document.querySelector(s);

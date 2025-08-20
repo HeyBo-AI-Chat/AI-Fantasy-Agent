@@ -379,7 +379,21 @@ document.getElementById('avatarFile').addEventListener('change', async (e) => {
 async function loadSources() {
   const list = document.getElementById("sourcesList");
   list.innerHTML = "Loading...";
+// simple user id placeholder (swap for Auth later)
+async function getUserId() {
+  let id = localStorage.getItem('user_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('user_id', id);
+  }
+  return id;
+}
 
+window.deleteSource = async (id) => {
+  const { error } = await supabase.from('team_sources').delete().eq('id', id);
+  if (error) alert('Delete failed: ' + error.message);
+  else await loadSources();
+};
   const { data, error } = await supabase
     .from("team_sources")
     .select("*")

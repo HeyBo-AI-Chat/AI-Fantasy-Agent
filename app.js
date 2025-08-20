@@ -89,7 +89,22 @@ const weekSel = el("#week");
 weekSel.innerHTML = Array.from({length: 18}, (_, i) => 
   `<option>Week ${i+1}</option>`
 ).join("");
+document.getElementById('btnAddSource')?.addEventListener('click', async () => {
+  const platform = (document.getElementById('srcPlatform')?.value || '').trim();
+  const handle   = (document.getElementById('srcHandle')?.value || '').trim();
+  const notes    = (document.getElementById('srcNotes')?.value || '').trim();
+  if (!platform || !handle) { alert('Platform and handle are required'); return; }
 
+  const user_id = await getUserId();
+  const { error } = await supabase.from('team_sources').insert([{ user_id, platform, handle, notes }]);
+  if (error) { alert('Save failed: ' + error.message); return; }
+
+  // clear inputs and refresh the list
+  document.getElementById('srcPlatform').value = '';
+  document.getElementById('srcHandle').value   = '';
+  document.getElementById('srcNotes').value    = '';
+  await loadSources();
+});
 /* ---------- Helpers ---------- */
 const qs = p => Object.entries(p).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join("&");
 const get = (url) => fetch(url, { headers: hdrs }).then(r=>r.json());

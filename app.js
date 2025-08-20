@@ -490,3 +490,90 @@ document.getElementById("btnAddSource").addEventListener("click", async () => {
 
 // load sources when the page initializes
 loadSources();
+// --- Live fantasy points subscription -------------------------------
+
+async function getUserId() {
+  // TEMP: until Auth is added. If you switched schema to user_id, use whatever
+  // stable per-user id you’re using. Otherwise return null to listen to all.
+  // Example: a device-based UUID in localStorage.
+  let uid = localStorage.getItem('afa_user_id');
+  if (!uid) {
+    uid = crypto.randomUUID();
+    localStorage.setItem('afa_user_id', uid);
+  }
+  return uid;
+}
+
+function updatePointsInDOM(row) {
+  // row must have: player_id, total_points (or points)
+  const pid = row.player_id || row.playerid || row.pid;
+  if (!pid) return;
+
+  const node = document.querySelector(`[data-player-id="${pid}"] .pts`);
+  if (!node) return;
+
+  const pts = row.total_points ?? row.points ?? row.fantasy_points ?? 0;
+  node.textContent = Number(pts).toFixed(1);
+}
+
+let fpChannel = null;
+
+async function subscribeFantasyPoints() {
+  // avoid double subscriptions
+  if (fpChannel) return;
+
+  const userId = await getUserId();
+
+  // Build a filter. If your table has user_id, use it. Otherwise, filter by season/week if you like.
+  const filter = userId ? `user_id=eq.${userId}` : undefined;
+
+  fpChannel = supabase
+    .channel('realtime:fantasy_points')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',             // insert | update | delete | '*'
+        schema: 'public',
+        table: 'fantasy_points',
+        ...(filter ? { filter } : {})
+      },
+      (payload) => {
+        // payload.new on INSERT/UPDATE; payload.old on DELETE
+        const row = payload.new ?? payload.old;
+        if (!row) return;
+        updatePointsInDOM(row);
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[Realtime] Subscribed to fantasy_points');
+      }
+    });
+
+  // Optional: seed current points once on load
+  seedCurrentPoints(userId).catch(console.error);
+
+  // Clean up on page close
+  window.addEventListener('beforeunload', () => {
+    if (fpChannel) {
+      supabase.removeChannel(fpChannel);
+      fpChannel = null;
+    }
+  });
+}
+
+async function seedCurrentPoints(userId) {
+  // Initial load to populate existing values before realtime updates roll in.
+  let q = supabase.from('fantasy_points').select('*');
+  if (userId) q = q.eq('user_id', userId);
+
+  const { data, error } = await q.limit(1000);
+  if (error) {
+    console.warn('seedCurrentPoints error', error);
+    return;
+  }
+  (data || []).forEach(updatePointsInDOM);
+}
+
+// Call this once when your app starts (e.g., after your DOM is ready)
+subscribeFantasyPoints();

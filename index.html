@@ -149,9 +149,22 @@
   </section>
 
   <!-- SCORES -->
-  <section id="tab-scores" class="hide">
-    <div class="row spread" style="margin:8px 0;"><b>Scores</b></div>
-    <div id="scoresList"></div>
+  <!-- SCORES -->
+<section id="tab-scores" class="hide">
+  <div class="row spread" style="margin:8px 0">
+    <b>Scores</b>
+    <span id="scoresUpdated" class="badge" style="opacity:.7">—</span>
+  </div>
+
+  <div class="card">
+    <div class="row spread">
+      <div><b>Team total</b></div>
+      <div id="teamTotal">0.0</div>
+    </div>
+  </div>
+
+  <div id="scoresList"></div>
+</section>
  <div class="player-row" data-player-id="PLAYER123">
   <div>Stefon Diggs</div>
   <div>Pts: <span class="pts">0.0</span></div>

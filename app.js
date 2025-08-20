@@ -1,5 +1,9 @@
-// Supabase client (if you haven't already)
-const supabase = window.supabase.createClient(APP.SUPABASE_URL, APP.SUPABASE_ANON);
+// Supabase client (uses values from window.APP set in config.js)
+const supabase = window.supabase ??
+  window.supabase = window.createClient(
+    window.APP.SUPABASE_URL,
+    window.APP.SUPABASE_ANON
+  );
 
 // Dev helper: a pseudo user id for now (replaced by real auth later)
 async function getUserId() {

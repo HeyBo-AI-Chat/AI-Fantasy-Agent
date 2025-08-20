@@ -45,7 +45,10 @@ $(".tabbtn").forEach(b => {
       el(`#tab-${t}`).classList.toggle("hidden", t !== name)
     );
   };
-});
+}); 
+if (t === 'roster') {
+  loadSources();
+}
 // ... your tab buttons, selectors, etc.
 
 // ← put it right here

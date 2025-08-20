@@ -179,6 +179,37 @@ document.getElementById('btnAddSource')?.addEventListener('click', async () => {
   document.getElementById('srcNotes').value    = '';
   await loadSources();
 });
+// ---------- Realtime subscription for team points ----------
+function subscribeTeamPoints() {
+  const team_id = window.APP.TEAM_ID;
+
+  const channel = supabase.channel('team-points-' + team_id)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'fantasy_points', filter: `team_id=eq.${team_id}` },
+      payload => {
+        // Re-render your points UI here.
+        // For example, re-fetch team totals or append the new row:
+        refreshTeamPoints();
+      }
+    )
+    .subscribe();
+}
+
+async function refreshTeamPoints() {
+  const team_id = window.APP.TEAM_ID;
+  const { data, error } = await supabase
+    .from('fantasy_points')
+    .select('*')
+    .eq('team_id', team_id)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) { console.log(error); return; }
+  // TODO: draw into your "Scores" tab or a team total widget
+}
+subscribeTeamPoints();
+refreshTeamPoints();
 /* ---------- Helpers ---------- */
 const qs = p => Object.entries(p).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join("&");
 const get = (url) => fetch(url, { headers: hdrs }).then(r=>r.json());

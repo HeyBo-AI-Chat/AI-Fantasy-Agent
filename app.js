@@ -7,9 +7,18 @@ const supabase = window.supabase ??
 
 // Dev helper: a pseudo user id for now (replaced by real auth later)
 async function getUserId() {
-  // When you enable Auth:
-  // const { data: { user } } = await supabase.auth.getUser();
-  // if (user) return user.id;
+  // TODO: replace with real Supabase Auth later
+  let id = localStorage.getItem('dev_user_id');
+  if (!id) {
+    // quick uuid-ish
+    id = ([1e7]+-1e3+-4e3+-8e3+-1e11)
+      .replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      );
+    localStorage.setItem('dev_user_id', id);
+  }
+  return id;
+}
 
   // Dev mode fallback: keep a stable anonymous uuid in localStorage
   let id = localStorage.getItem('dev_user_id');

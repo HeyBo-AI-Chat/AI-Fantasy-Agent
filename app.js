@@ -60,15 +60,31 @@ $(".tabbtn").forEach(b => {
   };
 }); 
 if (t === 'roster') {
-  loadSources();
-}
-// ... your tab buttons, selectors, etc.
+  async function saveSource() {
+  const platform = document.getElementById('srcPlatform')?.value?.trim();
+  const handle   = document.getElementById('srcHandle')?.value?.trim();
+  const notes    = document.getElementById('srcNotes')?.value?.trim();
 
-// ← put it right here
-async function loadSources() {
+  if (!platform || !handle) {
+    alert('Platform and Handle are required');
+    return;
+  }
+
   const user_id = await getUserId();
-  const list = document.getElementById('sourcesList');
-  list.innerHTML = 'Loading...';
+  const { error } = await supabase
+    .from('team_sources')
+    .insert([{ user_id, platform, handle, notes }]);
+
+  if (error) {
+    alert('Save failed: ' + error.message);
+    return;
+  }
+
+  document.getElementById('srcPlatform').value = '';
+  document.getElementById('srcHandle').value   = '';
+  document.getElementById('srcNotes').value    = '';
+  await loadSources();
+}
 
   const { data, error } = await supabase
     .from('team_sources')

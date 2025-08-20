@@ -254,7 +254,18 @@ if (error) {
       : '<i>No scores yet.</i>';
   }
 }
-
+async function computeScores({ week, season, team_id }) {
+  // any of these can be optional; your function can pick defaults
+  const payload = { week, season, team_id };
+  const { data, error } = await supabase.functions.invoke('compute-scores', {
+    body: payload
+  });
+  if (error) {
+    alert('Compute failed: ' + error.message);
+    return;
+  }
+  alert('Scoring job started.');
+}
 // call once on load and keep the realtime subscription active
 subscribeTeamPoints();
 refreshTeamPoints();

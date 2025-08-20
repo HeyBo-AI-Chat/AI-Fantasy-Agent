@@ -258,7 +258,14 @@ if (error) {
 // call once on load and keep the realtime subscription active
 subscribeTeamPoints();
 refreshTeamPoints();
-/* ---------- Helpers ---------- */
+document.getElementById('srcSaveBtn')?.addEventListener('click', saveSource);
+
+// If you have tab buttons, call loadSources() when "Roster" is shown.
+// Or just:
+window.addEventListener('DOMContentLoaded', () => {
+  loadSources(); // optional to show immediately
+});
+  /* ---------- Helpers ---------- */
 const qs = p => Object.entries(p).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join("&");
 const get = (url) => fetch(url, { headers: hdrs }).then(r=>r.json());
 const post = (url, body={}) => fetch(url,{ method:"POST", headers: hdrs, body: JSON.stringify(body)}).then(r=>r.json());

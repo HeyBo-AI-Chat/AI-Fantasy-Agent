@@ -26,6 +26,75 @@
     .hide { display:none; }
     .badge { font-size:12px; color:#94a3b8 }
     a.card { display:block; color:inherit; text-decoration:none; }
+/* Utility */
+.hidden { display: none !important; }
+.active { opacity: 1; }
+
+/* Page container */
+.container, main, body {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+/* Make inputs/buttons full-width by default on phones */
+input[type="text"],
+input[type="number"],
+input[type="file"],
+select,
+textarea,
+button {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Two-up controls collapse to one column on small screens */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 480px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cards/sections */
+.section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 14px 0;
+}
+
+/* Bottom nav stays visible but doesn’t overlap content */
+#tabs {
+  position: sticky;
+  bottom: 0;
+  background: #0e1726;
+  padding: 8px 6px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+#tabs .tabbtn {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  padding: 8px 6px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+#tabs .tabbtn.active {
+  background: #1fb868;
+  color: #0e1726;
+  border-color: #1fb868;
+}
+
+/* Kill any accidental horizontal scroll */
+html, body { overflow-x: hidden; }
   </style>
 </head>
 <body>

@@ -86,6 +86,13 @@ if (t === 'roster') {
   await loadSources();
 }
 
+  async function loadSources() {
+  const user_id = await getUserId();
+  const list = document.getElementById('linkedSources');
+  if (!list) return;
+
+  list.innerHTML = 'Loading...';
+
   const { data, error } = await supabase
     .from('team_sources')
     .select('*')
@@ -103,12 +110,12 @@ if (t === 'roster') {
   }
 
   list.innerHTML = data.map(r => `
-    <div class="row" style="justify-content:space-between;align-items:center;margin:6px 0">
+    <div class="row" style="justify-content:space-between;align-items:center;margin:.5rem 0;">
       <div>
         <b>${r.platform}</b> — ${r.handle}
-        ${r.notes ? `<div style="opacity:.75">${r.notes}</div>` : ''}
+        ${r.notes ? `<div style="opacity:.7;font-size:.9em">${r.notes}</div>` : ''}
       </div>
-      <button class="btn muted" data-id="${r.id}" onclick="deleteSource('${r.id}')">Delete</button>
+      <button class="btn muted" data-id="${r.id}" disabled>⋯</button>
     </div>
   `).join('');
 }

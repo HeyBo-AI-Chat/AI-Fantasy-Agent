@@ -46,7 +46,40 @@ $(".tabbtn").forEach(b => {
     );
   };
 });
+// ... your tab buttons, selectors, etc.
 
+// ← put it right here
+async function loadSources() {
+  const user_id = await getUserId();
+  const list = document.getElementById('sourcesList');
+  list.innerHTML = 'Loading...';
+
+  const { data, error } = await supabase
+    .from('team_sources')
+    .select('*')
+    .eq('user_id', user_id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    list.innerHTML = 'Error: ' + error.message;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = '<i>No saved platforms yet.</i>';
+    return;
+  }
+
+  list.innerHTML = data.map(r => `
+    <div class="row" style="justify-content:space-between;align-items:center;margin:6px 0">
+      <div>
+        <b>${r.platform}</b> — ${r.handle}
+        ${r.notes ? `<div style="opacity:.75">${r.notes}</div>` : ''}
+      </div>
+      <button class="btn muted" data-id="${r.id}" onclick="deleteSource('${r.id}')">Delete</button>
+    </div>
+  `).join('');
+}
 // ---------- Selectors ----------
 const years = [2020,2021,2022,2023,2024];
 const seasonSel = el("#season");

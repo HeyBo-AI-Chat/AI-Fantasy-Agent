@@ -577,3 +577,12 @@ async function seedCurrentPoints(userId) {
 
 // Call this once when your app starts (e.g., after your DOM is ready)
 subscribeFantasyPoints();
+const activeSeason = window.APP.SEASON_DEFAULT;
+const activeWeek = window.APP.WEEK_DEFAULT;
+
+const filterParts = [];
+if (userId) filterParts.push(`user_id=eq.${userId}`);
+filterParts.push(`season=eq.${activeSeason}`);
+filterParts.push(`week=eq.${activeWeek}`);
+
+const filter = filterParts.join('&'); // e.g. "user_id=eq.X&season=eq.2024&week=eq.1"

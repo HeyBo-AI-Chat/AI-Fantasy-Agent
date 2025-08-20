@@ -257,7 +257,32 @@ el("#btnAsk").onclick = async ()=>{
   el("#agentReply").textContent = reply;
   speak(reply);
 };
+// Add external source (per-user)
+document.getElementById('btnAddSource').onclick = async () => {
+  const platform = document.getElementById('srcPlatform').value.trim();
+  const handle   = document.getElementById('srcHandle').value.trim();
+  const notes    = document.getElementById('srcNotes').value.trim();
 
+  if (!platform || !handle) {
+    alert('Platform and Handle are required.');
+    return;
+  }
+
+  const user_id = await getUserId();
+
+  const { error } = await supabase
+    .from('team_sources')
+    .insert([{ user_id, platform, handle, notes }]);
+
+  if (error) {
+    alert('Save failed: ' + error.message);
+  } else {
+    document.getElementById('srcPlatform').value = '';
+    document.getElementById('srcHandle').value = '';
+    document.getElementById('srcNotes').value = '';
+    await loadSources(); // refresh list
+  }
+};
 /* ---------- Init ---------- */
 (async function init(){
   await loadDraft();

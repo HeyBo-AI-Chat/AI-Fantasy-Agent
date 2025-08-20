@@ -266,7 +266,14 @@ async function computeScores({ week, season, team_id }) {
   }
   alert('Scoring job started.');
 }
-// call once on load and keep the realtime subscription active
+document.getElementById('computeBtn')?.addEventListener('click', async () => {
+  // put your own current week/season/team logic here
+  const week = Number(document.getElementById('weekSelect')?.value || 1);
+  const season = Number(new Date().getFullYear());
+  const team_id = window.APP?.TEAM_ID || 'demo-team-1';
+  await computeScores({ week, season, team_id });
+});
+  // call once on load and keep the realtime subscription active
 subscribeTeamPoints();
 refreshTeamPoints();
 document.getElementById('srcSaveBtn')?.addEventListener('click', saveSource);

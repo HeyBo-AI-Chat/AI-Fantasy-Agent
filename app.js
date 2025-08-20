@@ -295,3 +295,84 @@ document.getElementById('avatarFile').addEventListener('change', async (e) => {
   // optionally persist to a user/team table
   // await supa.from('teams_user').update({ avatar_url: data.publicUrl }).eq('team_id', APP.TEAM_ID);
 });
+// ---------- External Platform Sources (Roster tab) ----------
+
+// helper: render list of sources for this team
+async function loadSources() {
+  const list = document.getElementById("sourcesList");
+  list.innerHTML = "Loading...";
+
+  const { data, error } = await supabase
+    .from("team_sources")
+    .select("*")
+    .eq("team_id", A.TEAM_ID)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    list.innerHTML = `<div class="badge" style="color:#ff6666">Load failed: ${error.message}</div>`;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = `<div class="badge">No sources yet.</div>`;
+    return;
+  }
+
+  list.innerHTML = data.map(row => `
+    <div class="row" style="justify-content:space-between; margin:6px 0; gap:8px">
+      <div>
+        <b>${row.platform}</b> &mdash; ${row.handle}
+        ${row.notes ? `<div class="badge">${row.notes}</div>` : ""}
+      </div>
+      <button class="btn muted" data-del="${row.id}" style="padding:6px 10px">Delete</button>
+    </div>
+  `).join("");
+
+  // attach delete handlers
+  list.querySelectorAll("[data-del]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-del");
+      const { error: delErr } = await supabase.from("team_sources").delete().eq("id", id);
+      if (delErr) {
+        alert("Delete failed: " + delErr.message);
+      } else {
+        loadSources();
+      }
+    });
+  });
+}
+
+// add handler for the add button
+document.getElementById("btnAddSource").addEventListener("click", async () => {
+  const platform = document.getElementById("srcPlatform").value.trim();
+  const handle   = document.getElementById("srcHandle").value.trim();
+  const notes    = document.getElementById("srcNotes").value.trim();
+  const status   = document.getElementById("srcStatus");
+
+  if (!platform || !handle) {
+    status.textContent = "Platform and handle required.";
+    return;
+  }
+
+  status.textContent = "Saving...";
+
+  const { error } = await supabase.from("team_sources").insert({
+    team_id: A.TEAM_ID,
+    platform,
+    handle,
+    notes
+  });
+
+  if (error) {
+    status.textContent = "Save failed: " + error.message;
+  } else {
+    status.textContent = "Saved!";
+    document.getElementById("srcHandle").value = "";
+    document.getElementById("srcNotes").value = "";
+    loadSources();
+    setTimeout(() => status.textContent = "", 1500);
+  }
+});
+
+// load sources when the page initializes
+loadSources();

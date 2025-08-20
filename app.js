@@ -767,5 +767,58 @@ const filterParts = [];
 if (userId) filterParts.push(`user_id=eq.${userId}`);
 filterParts.push(`season=eq.${activeSeason}`);
 filterParts.push(`week=eq.${activeWeek}`);
+// --- Render helper for the "Scores" tab ---
+async function loadTeamPoints() {
+  const t = document.getElementById('scoresList');
+  if (!t) return;
 
+  const team_id = window.APP.TEAM_ID; // set this somewhere in APP
+  t.innerHTML = 'Loading...';
+
+  const { data, error } = await supabase
+    .from('fantasy_points')
+    .select('*')
+    .eq('team_id', team_id)
+    .order('updated_at', { ascending: false })
+    .limit(100);
+
+  if (error) { t.innerHTML = 'Error: ' + error.message; return; }
+  if (!data || data.length === 0) { t.innerHTML = '<i>No points yet</i>'; return; }
+
+  t.innerHTML = data.map(r => `
+    <div class="row" style="justify-content:space-between;gap:12px">
+      <div>
+        <b>${r.player_id}</b>
+        <div style="opacity:.7;font-size:.9em">
+          W${r.week} • ${r.season} • ${r.game_id ?? ''}</div>
+      </div>
+      <div><b>${Number(r.points ?? r.total_points ?? 0).toFixed(1)}</b></div>
+    </div>
+  `).join('');
+}
+
+// Call once on page load and whenever the Scores tab is shown
+window.addEventListener('DOMContentLoaded', () => {
+  loadTeamPoints();
+});
 const filter = filterParts.join('&'); // e.g. "user_id=eq.X&season=eq.2024&week=eq.1"
+// --- Compute button -> Edge Function ---
+document.getElementById('computeBtn')?.addEventListener('click', async () => {
+  try {
+    const res = await fetch(`${window.APP.SUPABASE_URL}/functions/v1/compute-scores`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // anon is fine to call your function (RLS protects tables)
+        'apikey': window.APP.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP.SUPABASE_ANON}`
+      },
+      // tweak season/week as you wish
+      body: JSON.stringify({ season: 2024, week: 1 })
+    });
+    const text = await res.text();
+    alert(`Compute finished: ${res.status} ${text}`);
+  } catch (e) {
+    alert('Compute failed: ' + (e?.message || e));
+  }
+});

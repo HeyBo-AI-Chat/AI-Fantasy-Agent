@@ -689,25 +689,37 @@ function updatePointsInDOM(row) {
 
 let fpChannel = null;
 
-async function subscribeFantasyPoints() {
-  // avoid double subscriptions
-  if (fpChannel) return;
+function subscribeFantasyPoints(team_id) {
+  const channel = supabase.channel('fp-updates')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'fantasy_points' },
+      () => refreshTeamPoints(team_id))
+    .subscribe();
+  return channel;
+}
 
-  const userId = await getUserId();
+async function refreshTeamPoints(team_id) {
+  const { data, error } = await supabase
+    .from('fantasy_points')
+    .select('*')
+    .eq('team_id', team_id)
+    .order('created_at', { ascending: false })
+    .limit(50);
 
-  // Build a filter. If your table has user_id, use it. Otherwise, filter by season/week if you like.
-  const filter = userId ? `user_id=eq.${userId}` : undefined;
+  if (error) return console.log(error);
 
-  fpChannel = supabase
-    .channel('realtime:fantasy_points')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',             // insert | update | delete | '*'
-        schema: 'public',
-        table: 'fantasy_points',
-        ...(filter ? { filter } : {})
-      },
+  // TODO: render into your Scores tab container
+  const el = document.getElementById('scoresList');
+  if (!el) return;
+  el.innerHTML = (data || []).map(r => `
+    <div>${r.player_id} — ${r.total_points ?? r.points ?? 0}</div>
+  `).join('');
+}
+
+// Kick it off
+const _team = window.APP?.TEAM_ID || 'demo-team-1';
+subscribeFantasyPoints(_team);
+refreshTeamPoints(_team);
       (payload) => {
         // payload.new on INSERT/UPDATE; payload.old on DELETE
         const row = payload.new ?? payload.old;

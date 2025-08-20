@@ -431,7 +431,10 @@ async function loadScores(){
     select:"team_id,season,week,points,breakdown",
     "season":"eq:"+Number(seasonSel.value), "week":"eq:"+Number(weekSel.value)
   });
-  const data = await get(url);
+ <div id="scores">
+  <div id="scoresList"></div>
+</div>
+   const data = await get(url);
   el("#scoresList").innerHTML = data.map(r=>`
     <div class="card">
       <div class="row spread"><b>${r.team_id}</b><b>${Number(r.points||0).toFixed(2)}</b></div>

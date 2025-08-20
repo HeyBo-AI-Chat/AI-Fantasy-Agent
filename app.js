@@ -87,6 +87,73 @@ async function loadSources() {
     </div>
   `).join('');
 }
+// ---------- Team Sources (per TEAM) ----------
+async function saveSource() {
+  const team_id = window.APP.TEAM_ID;               // from config.js
+  const platform = document.getElementById('srcPlatform').value.trim();
+  const handle   = document.getElementById('srcHandle').value.trim();
+  const notes    = document.getElementById('srcNotes').value.trim();
+
+  if (!platform || !handle) {
+    alert('Platform and Handle are required');
+    return;
+  }
+
+  const { error } = await supabase
+    .from('team_sources')
+    .insert([{ team_id, platform, handle, notes }]);
+
+  if (error) {
+    alert('Save failed: ' + error.message);
+    return;
+  }
+  document.getElementById('srcPlatform').value = '';
+  document.getElementById('srcHandle').value   = '';
+  document.getElementById('srcNotes').value    = '';
+  await loadSources(); // refresh list
+}
+
+async function loadSources() {
+  const team_id = window.APP.TEAM_ID;
+  const list = document.getElementById('sourcesList');
+  list.innerHTML = 'Loading...';
+
+  const { data, error } = await supabase
+    .from('team_sources')
+    .select('*')
+    .eq('team_id', team_id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    list.innerHTML = 'Error: ' + error.message;
+    return;
+  }
+  if (!data || data.length === 0) {
+    list.innerHTML = '<i>No saved platforms yet.</i>';
+    return;
+  }
+
+  list.innerHTML = data.map(r => `
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <b>${r.platform}</b> — ${r.handle}
+        ${r.notes ? `<div style="opacity:.8">${r.notes}</div>` : ''}
+      </div>
+      <button class="btn muted" data-id="${r.id}" onclick="deleteSource('${r.id}')">Delete</button>
+    </div>
+  `).join('');
+}
+
+async function deleteSource(id) {
+  const { error } = await supabase.from('team_sources').delete().eq('id', id);
+  if (error) { alert('Delete failed: ' + error.message); return; }
+  await loadSources();
+}
+
+// wire up button and load on page/tabs
+document.getElementById('btnAddSource').onclick = saveSource;
+// call loadSources() either on page load or when the Roster tab becomes active:
+loadSources();
 // ---------- Selectors ----------
 const years = [2020,2021,2022,2023,2024];
 const seasonSel = el("#season");

@@ -1,30 +1,41 @@
-const A = window.APP;
+// ---------- Supabase Init ----------
+const A = window.APP; // holds your env vars from Vercel
+const supabase = window.supabase.createClient(
+  A.SUPABASE_URL,
+  A.SUPABASE_ANON
+);
+
+// Optional: headers (if you need fetch calls instead of supabase-js)
 const hdrs = {
-  "Content-Type":"application/json",
+  "Content-Type": "application/json",
   "apikey": A.SUPABASE_ANON,
   "Authorization": "Bearer " + A.SUPABASE_ANON
 };
+
+// ---------- Tabs ----------
 const el = s => document.querySelector(s);
 const $ = s => Array.from(document.querySelectorAll(s));
 
-/* ---------- Tabs ---------- */
-$(".tabbtn").forEach(b=>{
-  b.onclick = ()=>{
-    $(".tabbtn").forEach(x=>x.classList.remove("active"));
+$(".tabbtn").forEach(b => {
+  b.onclick = () => {
+    $(".tabbtn").forEach(x => x.classList.remove("active"));
     b.classList.add("active");
-    const t = b.dataset.t;
-    ["draft","roster","lineup","scores","news","agent"].forEach(name=>{
-      el(`#tab-${name}`).classList.toggle("hide", name!==t);
-    });
+    const name = b.dataset.t;
+    ["draft","roster","lineup","scores"].forEach(t =>
+      el(`#tab-${t}`).classList.toggle("hidden", t !== name)
+    );
   };
 });
 
-/* ---------- Selectors ---------- */
+// ---------- Selectors ----------
 const years = [2020,2021,2022,2023,2024];
 const seasonSel = el("#season");
-seasonSel.innerHTML = years.map(y=>`<option ${y===A.SEASON_DEFAULT?"selected":""}>${y}</option>`).join("");
+seasonSel.innerHTML = years.map(y => `<option>${y}</option>`).join("");
+
 const weekSel = el("#week");
-weekSel.innerHTML = Array.from({length:18},(_,i)=>i+1).map(w=>`<option ${w===A.WEEK_DEFAULT?"selected":""}>${w}</option>`).join("");
+weekSel.innerHTML = Array.from({length: 18}, (_, i) => 
+  `<option>Week ${i+1}</option>`
+).join("");
 
 /* ---------- Helpers ---------- */
 const qs = p => Object.entries(p).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join("&");

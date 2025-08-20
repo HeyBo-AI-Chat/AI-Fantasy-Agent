@@ -236,3 +236,23 @@ el("#btnAsk").onclick = async ()=>{
   seasonSel.onchange = ()=>{ loadDraft(); loadRoster(); loadScores(); };
   weekSel.onchange   = ()=>{ loadDraft(); loadScores(); };
 })();
+// ---------- Profile Upload (add this at the END of app.js) ----------
+document.getElementById("uploadProfile").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Preview before upload
+  const url = URL.createObjectURL(file);
+  document.getElementById("profilePreview").src = url;
+
+  // Upload to Supabase Storage
+  const { data, error } = await supabase.storage
+    .from("profile-pics")
+    .upload(`users/${Date.now()}-${file.name}`, file);
+
+  if (error) {
+    alert("Upload failed: " + error.message);
+  } else {
+    alert("Profile saved!");
+  }
+});

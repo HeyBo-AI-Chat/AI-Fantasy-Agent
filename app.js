@@ -267,3 +267,18 @@ document.getElementById("uploadProfile").addEventListener("change", async (e) =>
     alert("Profile saved!");
   }
 });
+document.getElementById("saveTeam").addEventListener("click", async () => {
+  const platform = document.getElementById("platform").value;
+  const leagueId = document.getElementById("leagueId").value;
+  const teamName = document.getElementById("teamName").value;
+
+  const { data, error } = await supabase.from("teams_user").insert([
+    { platform, league_id: leagueId, team_name: teamName, user_id: (await supabase.auth.getUser()).data.user.id }
+  ]);
+
+  if (error) {
+    alert("Error saving team: " + error.message);
+  } else {
+    alert("Team saved!");
+  }
+});

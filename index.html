@@ -63,7 +63,32 @@
     </div>
     <div id="draftList"></div>
   </section>
+<!-- External platforms mini form -->
+<div class="card" style="margin-top:12px">
+  <b>Link External Platform</b>
+  <div class="row" style="gap:8px; margin-top:8px">
+    <select id="srcPlatform" style="flex:1">
+      <option value="DraftKings">DraftKings</option>
+      <option value="FanDuel">FanDuel</option>
+      <option value="Yahoo">Yahoo</option>
+      <option value="ESPN">ESPN</option>
+      <option value="Sleeper">Sleeper</option>
+      <option value="Other">Other</option>
+    </select>
+    <input id="srcHandle" placeholder="Username / League ID" style="flex:1" />
+  </div>
+  <input id="srcNotes" placeholder="Notes (optional)" style="margin-top:8px; width:100%" />
+  <div class="row spread" style="margin-top:8px">
+    <button id="btnAddSource" class="btn">Add</button>
+    <span id="srcStatus" class="badge"></span>
+  </div>
+</div>
 
+<!-- List of saved sources -->
+<div class="card" style="margin-top:8px">
+  <b>Linked Sources</b>
+  <div id="sourcesList" style="margin-top:8px"></div>
+</div>
   <!-- ROSTER -->
   <section id="tab-roster" class="hide">
     <div class="row spread" style="margin:8px 0;">

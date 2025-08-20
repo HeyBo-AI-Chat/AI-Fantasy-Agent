@@ -282,3 +282,16 @@ document.getElementById("saveTeam").addEventListener("click", async () => {
     alert("Team saved!");
   }
 });
+document.getElementById('avatarFile').addEventListener('change', async (e) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  const supa = window._supa(); // createClient already provided in app.js
+  const path = `${Date.now()}-${f.name.replace(/\s+/g,'_')}`;
+  const { error } = await supa.storage.from('avatars').upload(path, f, { upsert: true });
+  if (error) return toast(error.message);
+  const { data } = supa.storage.from('avatars').getPublicUrl(path);
+  document.getElementById('avatarPreview').src = data.publicUrl;
+
+  // optionally persist to a user/team table
+  // await supa.from('teams_user').update({ avatar_url: data.publicUrl }).eq('team_id', APP.TEAM_ID);
+});

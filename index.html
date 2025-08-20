@@ -96,7 +96,19 @@
     </div>
     <div id="rosterList"></div>
   </section>
-
+<div class="card" style="margin-top:12px">
+  <b>Add External Platform</b>
+  <div class="row" style="gap:8px; margin-top:8px">
+    <input id="srcPlatform" placeholder="Platform (DraftKings, Yahoo...)" />
+    <input id="srcHandle"   placeholder="Handle / League ID / URL slug" />
+  </div>
+  <textarea id="srcNotes" placeholder="Notes (optional)"></textarea>
+  <div class="row" style="gap:8px; margin-top:8px">
+    <button class="btn" id="btnAddSource">Save</button>
+    <button class="btn muted" id="btnReloadSources">Reload</button>
+  </div>
+  <div id="sourcesList" style="margin-top:8px"></div>
+</div>
   <!-- LINEUP -->
   <section id="tab-lineup" class="hide">
     <div class="row spread" style="margin:8px 0;">

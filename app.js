@@ -736,7 +736,37 @@ document.getElementById("btnAddSource").addEventListener("click", async () => {
 // load sources when the page initializes
 loadSources();
 // --- Live fantasy points subscription -------------------------------
+function populateIfEmpty(sel, items) {
+  if (!sel || sel.options.length > 0) return;
+  items.forEach(({ value, label, disabled, selected }) => {
+    const opt = document.createElement('option');
+    opt.value = value ?? label;
+    opt.textContent = label ?? String(value);
+    if (disabled) opt.disabled = true;
+    if (selected) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
 
+function initDropdowns() {
+  populateIfEmpty(document.getElementById('srcPlatform'), [
+    { value: '', label: 'Select Platform', disabled: true, selected: true },
+    { label: 'DraftKings' }, { label: 'FanDuel' }, { label: 'Yahoo' },
+    { label: 'ESPN' }, { label: 'Sleeper' }, { label: 'Other' },
+  ]);
+
+  populateIfEmpty(document.getElementById('season'), [
+    { value: '', label: 'Select Season', disabled: true, selected: true },
+    { label: '2024' }, { label: '2023' }, { label: '2022' },
+  ]);
+
+  populateIfEmpty(document.getElementById('week'), [
+    { value: '', label: 'Select Week', disabled: true, selected: true },
+    ...Array.from({ length: 18 }, (_, i) => ({ label: String(i + 1) })),
+  ]);
+}
+
+document.addEventListener('DOMContentLoaded', initDropdowns);
 async function getUserId() {
   // TEMP: until Auth is added. If you switched schema to user_id, use whatever
   // stable per-user id you’re using. Otherwise return null to listen to all.

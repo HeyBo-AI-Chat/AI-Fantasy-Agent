@@ -47,7 +47,8 @@ async function getUserId() {
    Dropdown data & population
    ========================= */
 const PLATFORM_OPTIONS = ['DraftKings','FanDuel','Yahoo','ESPN','Sleeper','Other'];
-const SEASONS = Array.from({ length: 12 }, (_, i) => 2018 + i).reverse(); // 2029..2018
+// before: const SEASONS = Array.from({ length: 12 }, ...).reverse()
+const SEASONS = [2024, 2023, 2022, 2021, 2020];
 const WEEKS   = Array.from({ length: 18 }, (_, i) => i + 1);              // 1..18
 
 let seasonSel, weekSel; // assigned in init()
@@ -331,7 +332,27 @@ $id('btnAsk')?.addEventListener('click', async () => {
     if ($id('agentReply')) $id('agentReply').textContent = 'Error contacting agent.';
   }
 });
+// ========================
+// Button wiring functions
+// ========================
 
+function wireAddSource() {
+  const btn = document.getElementById('btnAddSource');
+  if (!btn) return;
+  btn.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    // … same code from B) …
+  });
+}
+
+function wireCompute() {
+  const btn = document.getElementById('btnCompute') || document.getElementById('computeBtn');
+  if (!btn) return;
+  btn.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    // … same code from B) …
+  });
+}
 /* =================
    Event wiring init
    ================= */

@@ -98,7 +98,14 @@ button {
 <section id="tab-scores" class="hidden"></section>
 <section id="tab-news"   class="hidden"></section>
 <section id="tab-agent"  class="hidden"></section>
+/* content wrapper: fill small screens nicely */
+.wrap { max-width: 600px; width: 100%; margin: 0 auto; padding: 16px; }
 
+/* fixed bottom tabs with safe-area padding */
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+
+/* leave space so content isn't hidden behind tabs */
+body { padding-bottom: 84px; } /* adjust to your .tabs height */
     /* Kill any accidental horizontal scroll */
 html, body { overflow-x: hidden; }
   </style>

@@ -899,3 +899,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+// -------- Tabs: robust event delegation --------
+(function initTabs() {
+  const tabs = document.getElementById('tabs');
+  const sections = Array.from(document.querySelectorAll("section[id^='tab-']"));
+
+  if (!tabs || sections.length === 0) {
+    console.warn('Tabs init: missing #tabs or tab sections.');
+    return;
+  }
+
+  // Helper: show a target section id and mark active button
+  function showTab(targetId) {
+    // hide all sections
+    sections.forEach(s => s.classList.add('hidden'));
+
+    // show the requested section
+    const target = document.getElementById(targetId);
+    if (target) target.classList.remove('hidden');
+
+    // sync button active classes
+    Array.from(tabs.querySelectorAll('.tabbtn')).forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-tab') === targetId);
+    });
+  }
+
+  // Initial state: show the first button's target (or tab-draft)
+  const firstBtn = tabs.querySelector('.tabbtn') || tabs.querySelector('[data-tab="tab-draft"]');
+  const initial = firstBtn ? firstBtn.getAttribute('data-tab') : 'tab-draft';
+  showTab(initial);
+
+  // Delegate clicks from the nav
+  tabs.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tabbtn');
+    if (!btn) return;
+    e.preventDefault();
+    const targetId = btn.getAttribute('data-tab');
+    if (targetId) showTab(targetId);
+  }, { passive: true });
+})();

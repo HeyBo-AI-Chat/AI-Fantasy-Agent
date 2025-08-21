@@ -1009,3 +1009,23 @@ if (_tabs) {
 } else {
   console.warn('No #tabs element found.');
 }
+document.addEventListener('DOMContentLoaded', () => {
+  const tabs = Array.from(document.querySelectorAll('.tabbtn'));
+  const sections = {
+    draft:  document.getElementById('tab-draft'),
+    roster: document.getElementById('tab-roster'),
+    lineup: document.getElementById('tab-lineup'),
+    scores: document.getElementById('tab-scores'),
+    news:   document.getElementById('tab-news'),
+    agent:  document.getElementById('tab-agent'),
+  };
+
+  function showTab(name){
+    Object.entries(sections).forEach(([k,el]) => el && el.classList.toggle('hidden', k !== name));
+    tabs.forEach(b => b.classList.toggle('active', b.dataset.t === name));
+    localStorage.setItem('active_tab', name);
+  }
+
+  tabs.forEach(b => b.addEventListener('click', () => showTab(b.dataset.t)));
+  showTab(localStorage.getItem('active_tab') || 'draft');
+});

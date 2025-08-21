@@ -285,7 +285,20 @@ button>
 </div>
 
 <!-- bottom nav -->
-<nav id="tabs">
+<script src="./config.js"></script>
+<script src="./app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
+<section id="tab-draft"></section>
+<section id="tab-roster" class="hidden"></section>
+<section id="tab-lineup" class="hidden"></section>
+<section id="tab-scores" class="hidden"></section>
+<section id="tab-news"   class="hidden"></section>
+<section id="tab-agent"  class="hidden"></section>
+  <nav id="tabs">
   <button type="button" class="tabbtn active" data-t="draft">Draft</button>
   <button type="button" class="tabbtn" data-t="roster">Roster</button>
   <button type="button" class="tabbtn" data-t="lineup">Lineup</button>
@@ -293,12 +306,14 @@ button>
   <button type="button" class="tabbtn" data-t="news">News</button>
   <button type="button" class="tabbtn" data-t="agent">Agent</button>
 </nav>
-
-<script src="./config.js"></script>
-<script src="./app.js"></script>
+<script src="./config.js" defer></script>
+<script src="./app.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker
+      .register('/sw.js', { scope: '/' })
+      .then(r => console.log('SW registered', r.scope))
+      .catch(err => console.warn('SW register failed', err));
   }
 </script>
 </body>

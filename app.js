@@ -878,3 +878,24 @@ document.getElementById('computeBtn')?.addEventListener('click', async () => {
     alert('Compute failed: ' + (e?.message || e));
   }
 });
+document.addEventListener("DOMContentLoaded", () => {
+  const buttons = document.querySelectorAll(".tabbtn");
+  const sections = document.querySelectorAll("section[id^='tab-']");
+
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // Hide all sections
+      sections.forEach(sec => sec.classList.add("hidden"));
+
+      // Remove active from all buttons
+      buttons.forEach(b => b.classList.remove("active"));
+
+      // Show the target section
+      const target = btn.getAttribute("data-tab");
+      document.getElementById(target).classList.remove("hidden");
+
+      // Mark this button as active
+      btn.classList.add("active");
+    });
+  });
+});

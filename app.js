@@ -38,7 +38,61 @@ const supabase = window.supabase.createClient(
   A.SUPABASE_URL,
   A.SUPABASE_ANON
 );
+// ---- helpers ----
+const $ = (id) => document.getElementById(id);
+const fillSelect = (sel, items, placeholder = 'Select…') => {
+  if (!sel) return;
+  sel.innerHTML =
+    `<option value="">${placeholder}</option>` +
+    items.map(v => `<option value="${v}">${v}</option>`).join('');
+};
 
+// ---- initial data for selects ----
+const PLATFORM_OPTIONS = ['DraftKings', 'FanDuel', 'Yahoo', 'ESPN', 'Sleeper', 'Other'];
+const SEASONS = Array.from({length: 12}, (_,i) => 2018 + i).reverse();   // 2029..2018
+const WEEKS   = Array.from({length: 18}, (_,i) => i + 1);                // 1..18
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Make sure these IDs exist in your HTML:
+  // <select id="season"></select>
+  // <select id="week"></select>
+  // <select id="srcPlatform"></select>
+  // <input  id="srcHandle">
+  // <textarea id="srcNotes"></textarea>
+  // <button id="btnAddSource">Add Source</button>
+
+  fillSelect($('season'), SEASONS, 'Select Season');
+  fillSelect($('week'),   WEEKS.map(w => `Week ${w}`), 'Select Week');
+  fillSelect($('srcPlatform'), PLATFORM_OPTIONS, 'Select Platform');
+
+  // Wire the Add Source button
+  $('btnAddSource')?.addEventListener('click', addSource);
+});
+
+// ---- Supabase save for team_sources ----
+async function addSource () {
+  const platform = $('srcPlatform')?.value || '';
+  const handle   = $('srcHandle')?.value.trim() || '';
+  const notes    = $('srcNotes')?.value || '';
+
+  if (!platform || !handle) {
+    alert('Platform and Handle / League ID are required');
+    return;
+  }
+  const user_id = await getUserId();              // you already have this helper
+  const { error } = await supabase
+    .from('team_sources')
+    .insert([{ user_id, platform, handle, notes }]);
+
+  if (error) {
+    alert('Save failed: ' + error.message);
+    return;
+  }
+  // Clear and refresh
+  $('srcHandle').value = '';
+  $('srcNotes').value = '';
+  await loadSources?.();                          // if you have this function
+}
 // Optional: headers (if you need fetch calls instead of supabase-js)
 const hdrs = {
   "Content-Type": "application/json",

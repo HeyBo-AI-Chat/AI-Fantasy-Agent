@@ -946,3 +946,56 @@ document.addEventListener("DOMContentLoaded", () => {
     if (targetId) showTab(targetId);
   }, { passive: true });
 })();
+/* ---------- Tabs (bottom nav) ---------- */
+(function initTabs() {
+  const tabs = document.getElementById('tabs');
+  const sections = Array.from(document.querySelectorAll("section[id^='tab-']"));
+
+  if (!tabs || sections.length === 0) {
+    console.warn('Tabs init: missing #tabs or tab sections.');
+    return;
+  }
+
+  function showTab(targetId) {
+    // hide all sections
+    sections.forEach(s => s.classList.add('hidden'));
+    // show requested
+    const target = document.getElementById(targetId);
+    if (target) target.classList.remove('hidden');
+    // sync active button
+    Array.from(tabs.querySelectorAll('.tabbtn')).forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-tab') === targetId);
+    });
+  }
+
+  // initial
+  const firstBtn = tabs.querySelector('.tabbtn') || tabs.querySelector('[data-tab="tab-draft"]');
+  const initial = firstBtn ? firstBtn.getAttribute('data-tab') : 'tab-draft';
+  showTab(initial);
+
+  // delegate clicks
+  tabs.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tabbtn');
+    if (!btn) return;
+    e.preventDefault();
+    const targetId = btn.getAttribute('data-tab');
+    if (targetId) showTab(targetId);
+  }, { passive: true });
+})();
+
+/* ---------- Remove leftover demo line ("Stefon Diggs Pts: 0.0") ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+  const demo = Array.from(document.querySelectorAll('*'))
+    .find(n => n.childNodes && [...n.childNodes].some(c =>
+      c.nodeType === 3 && /Stefon\s+Diggs[\s\S]*Pts:\s*0\.0/i.test(c.textContent || '')
+    ));
+  if (demo) demo.remove();
+});
+
+/* ---------- (optional) Service Worker registration (keep only one on the page) ---------- */
+// Prefer this in index.html, but if you want it here instead, uncomment:
+// if ('serviceWorker' in navigator) {
+//   navigator.serviceWorker.register('/sw.js', { scope: '/' })
+//     .then(r => console.log('SW registered', r.scope))
+//     .catch(err => console.warn('SW register failed', err));
+// }

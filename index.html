@@ -69,26 +69,21 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 
   <!-- LINK EXTERNAL PLATFORM FORM -->
-  <div class="card">
-    <h3>Link External Platform</h3>
-    <div class="row">
-      <select id="srcPlatform">
-        <option value="" disabled selected>Select Platform</option>
-        <option value="DraftKings">DraftKings</option>
-        <option value="FanDuel">FanDuel</option>
-        <option value="Yahoo">Yahoo</option>
-        <option value="ESPN">ESPN</option>
-        <option value="Sleeper">Sleeper</option>
-        <option value="Other">Other</option>
-      </select>
-      <input id="srcHandle" placeholder="Username / League ID" />
-    </div>
-    <div class="row">
-      <textarea id="srcNotes" placeholder="Notes (optional)"></textarea>
-    </div>
-    <div class="row spread">
-      <span id="srcStatus" class="badge"></span>
-      <button id="btnAddSource" class="btn">Add Source</button>
+  <select id="srcPlatform">
+  <option value="">Select Platform</option>
+  <option>DraftKings</option>
+  <option>FanDuel</option>
+  <option>Yahoo</option>
+  <option>ESPN</option>
+  <option>Other</option>
+</select>
+
+<input id="srcHandle" placeholder="Username / League ID" />
+
+<textarea id="srcNotes" placeholder="Notes (optional)"></textarea>
+
+<button id="btnAddSource" onclick="saveSource()">Add Source</button>
+<button id="btnReloadSources" class="btn muted" onclick="loadSources()">Reload</button>
     </div>
   </div>
 

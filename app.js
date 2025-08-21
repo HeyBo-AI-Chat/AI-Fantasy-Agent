@@ -356,6 +356,50 @@ function wireCompute() {
 /* =================
    Event wiring init
    ================= */
+// --- Robust button wiring (id-agnostic) ---
+function bindButtons() {
+  // Try multiple ids so HTML/JS can mismatch and still work
+  const addBtns = [
+    document.getElementById('btnAddSource'),
+    document.getElementById('addSourceBtn'),
+    document.querySelector('[data-action="add-source"]'),
+  ].filter(Boolean);
+
+  const computeBtns = [
+    document.getElementById('btnCompute'),
+    document.getElementById('computeBtn'),
+    document.querySelector('[data-action="compute"]'),
+  ].filter(Boolean);
+
+  // Avoid double-binding
+  addBtns.forEach((btn) => {
+    if (btn.__wired) return;
+    btn.__wired = true;
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      await addSource();
+    });
+  });
+
+  computeBtns.forEach((btn) => {
+    if (btn.__wired) return;
+    btn.__wired = true;
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      await computeNow();
+    });
+  });
+}
+
+// Fallback: delegate clicks if buttons are mounted later
+document.addEventListener('click', async (e) => {
+  const add = e.target.closest('#btnAddSource, #addSourceBtn, [data-action="add-source"]');
+  const comp = e.target.closest('#btnCompute, #computeBtn, [data-action="compute"]');
+  if (add) { e.preventDefault(); await addSource(); }
+  if (comp) { e.preventDefault(); await computeNow(); }
+});
 document.addEventListener('DOMContentLoaded', async () => {
   // remove leftover demo line if present
   const demo = Array.from(document.querySelectorAll('*'))

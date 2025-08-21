@@ -438,32 +438,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   seasonSel?.addEventListener('change', () => { loadDraft(); loadRoster(); loadScores(); });
   weekSel?.addEventListener('change',   () => { loadDraft();                  loadScores(); });
 
-  // Add Source button
-  $id('btnAddSource')?.addEventListener('click', addSource);
 
-  // Compute buttons (support either id)
-  const compute = async () => {
-    try {
-      const res = await fetch(`${APP.SUPABASE_URL}/functions/v1/compute-scores`, {
-        method: 'POST',
-        headers: hdrs,
-        body: JSON.stringify({
-          season: Number(seasonSel?.value || new Date().getFullYear()),
-          week: Number((weekSel?.value || 'Week 1').replace('Week ','') || 1),
-          team_id: APP.TEAM_ID || 'demo-team-1'
-        })
-      });
-      const text = await res.text();
-      alert(`Compute finished: ${res.status} ${text}`);
-      await loadScores();
-    } catch (e) {
-      alert('Compute failed: ' + (e?.message || e));
-    }
-  };
-  ['btnCompute','computeBtn'].forEach(id => $id(id)?.addEventListener('click', compute));
-});
-// Ensure buttons are wired even if markup changes
-bindButtons();
-document.getElementById('tabs')?.addEventListener('click', () => {
-  setTimeout(bindButtons, 0);
-});

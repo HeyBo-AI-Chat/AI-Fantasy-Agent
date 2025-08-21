@@ -434,8 +434,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadScores();
   await loadNews().catch(()=>{});
 
-  // Changes in season/week reload relevant data
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+   // Changes in season/week reload relevant data
   seasonSel?.addEventListener('change', () => { loadDraft(); loadRoster(); loadScores(); });
   weekSel?.addEventListener('change',   () => { loadDraft();                  loadScores(); });
-
+const channel = supabase
+  .channel('custom-all-channel')
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'fantasy_points' },
+    payload => {
+      console.log('New fantasy update:', payload);
+    }
+  )
+  .subscribe();
 

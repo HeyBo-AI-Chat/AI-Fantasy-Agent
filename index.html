@@ -62,64 +62,30 @@ document.addEventListener('DOMContentLoaded', () => {
 <main class="wrap">
   <h2>AI Fantasy Agent</h2>
 
-  <!-- season/week controls + compute -->
-<select id="season">
-  <option value="" selected disabled>Select Season</option>
-  <option>2024</option>
-  <option>2023</option>
-  <option>2022</option>
-<option>2021</option>
-<option>2020</option>
-</option></option></select>
+  <!-- Season / Week -->
+<div class="stack">
+  <select id="season"></select>
+  <select id="week"></select>
+</div>
 
-<select id="weekSelect">
-  <option value="">Select Week</option>
-  <option value="1">Week 1</option>
-  <option value="2">Week 2</option>
-  <option value="3">Week 3</option>
-  <option value="4">Week 4</option>
-  <option value="5">Week 5</option>
-  <option value="6">Week 6</option>
-  <option value="7">Week 7</option>
-  <option value="8">Week 8</option>
-  <option value="9">Week 9</option>
-  <option value="10">Week 10</option>
-  <option value="11">Week 11</option>
-  <option value="12">Week 12</option>
-  <option value="13">Week 13</option>
-  <option value="14">Week 14</option>
-  <option value="15">Week 15</option>
-  <option value="16">Week 16</option>
-  <option value="17">Week 17</option>
-  <option value="18">Week 18</option>
-</select>
-</option></option><select id="srcPlatform"></select>
-<input id="srcHandle" placeholder="Username / League ID">
-<textarea id="srcNotes"></textarea>
-
-<div id="linkedSources"></div>
 <!-- Compute -->
-<button id="btnCompute" type="button" class="btn btn-primary">Compute</button>
+<button id="btnCompute" type="button" data-action="compute" class="btn btn-primary" style="width:100%">
+  Compute
+</button>
 
-  <!-- LINK EXTERNAL PLATFORM FORM -->
-  <select id="srcPlatform">
-  <option value="">Select Platform</option>
-  <option>DraftKings</option>
-  <option>FanDuel</option>
-  <option>Yahoo</option>
-  <option>ESPN</option>
-  <option>Other</option>
-</select>
+<!-- Sources (this belongs BELOW Compute) -->
+<div class="stack" style="margin-top:1rem">
+  <label class="label">Select Platform</label>
+  <select id="srcPlatform"></select>
 
-<input id="srcHandle" placeholder="Username / League ID" />
+  <input id="srcHandle" placeholder="Username / League ID" />
 
-<textarea id="srcNotes" placeholder="Notes (optional)"></textarea>
+  <textarea id="srcNotes" placeholder="Notes (optional)"></textarea>
 
-
-<!-- Add Source -->
-<button id="btnAddSource" type="button" class="btn">Add Source</button>
-    </div>
-  </div>
+  <button id="btnAddSource" type="button" data-action="add-source" class="btn" style="width:100%">
+    Add Source
+  </button>
+</div>
 
   <!-- LIST OF SAVED SOURCES -->
   <div class="card">

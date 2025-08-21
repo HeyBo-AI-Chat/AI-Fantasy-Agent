@@ -434,7 +434,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadScores();
   await loadNews().catch(()=>{});
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
    // Changes in season/week reload relevant data
   seasonSel?.addEventListener('change', () => { loadDraft(); loadRoster(); loadScores(); });
   weekSel?.addEventListener('change',   () => { loadDraft();                  loadScores(); });

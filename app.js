@@ -1029,3 +1029,8 @@ document.addEventListener('DOMContentLoaded', () => {
   tabs.forEach(b => b.addEventListener('click', () => showTab(b.dataset.t)));
   showTab(localStorage.getItem('active_tab') || 'draft');
 });
+document.addEventListener('DOMContentLoaded', () => {
+  const demo = Array.from(document.querySelectorAll('*'))
+    .find(n => n.childNodes && [...n.childNodes].some(c => c.nodeType === 3 && /Stefon Diggs/i.test(c.textContent)));
+  if (demo) demo.remove();
+});

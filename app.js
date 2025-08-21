@@ -8,7 +8,18 @@ const supaCreate = (window.supabase && window.supabase.createClient) || window.c
 if (!supaCreate) console.warn('Supabase library not found. Make sure you include supabase-js on the page.');
 
 const supabase = (window._supabaseClient ||= supaCreate?.(APP.SUPABASE_URL, APP.SUPABASE_ANON));
-
+// Returns { type: 'regular'|'playoff', value: number|string }
+// - regular: value = 1..18
+// - playoff: value = 'WC' | 'DIV' | 'CONF' | 'SB'
+function getSelectedWeek() {
+  const raw = (weekSel?.value || '').trim();
+  const n = Number(raw);
+  if (!raw) return { type: 'regular', value: 1 };      // default to Week 1 if empty
+  if (!Number.isNaN(n) && n >= 1 && n <= 18) {
+    return { type: 'regular', value: n };
+  }
+  return { type: 'playoff', value: raw };              // WC, DIV, CONF, SB
+}
 /* ==============
    Small helpers
    ============== */
@@ -317,7 +328,13 @@ async function loadNews() {
 }
 async function computeNow() {
   const season = Number(seasonSel?.value || new Date().getFullYear());
-  const week   = Number((weekSel?.value || 'Week 1').replace('Week ', '')) || 1;
+  const wk     = getSelectedWeek();
+  const payload = {
+    team_id: APP.TEAM_ID || 'demo-team-1',
+    season,
+    week:  wk.type === 'regular' ? wk.value : null,
+    round: wk.type === 'playoff' ? wk.value : null  // new
+  };
 
   const functionsBase =
     (window.APP && window.APP.FUNCS) ||
@@ -327,6 +344,25 @@ async function computeNow() {
     alert('Compute failed: Functions base URL missing.');
     return;
   }
+
+  try {
+    const res = await fetch(`${functionsBase}/compute-scores`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': APP.SUPABASE_ANON,
+        'Authorization': `Bearer ${APP.SUPABASE_ANON}`
+      },
+      body: JSON.stringify(payload)
+    });
+    const text = await res.text();
+    if (!res.ok) return alert(`Compute failed: ${text || res.status}`);
+    alert(`Compute finished: ${text || res.status}`);
+    await loadScores();
+  } catch (e) {
+    alert('Compute failed: ' + (e?.message || e));
+  }
+}
 
   try {
     const res = await fetch(`${functionsBase}/compute-scores`, {

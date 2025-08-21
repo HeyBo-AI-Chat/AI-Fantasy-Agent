@@ -45,24 +45,54 @@ async function getUserId() {
 
 /* =========================
    Dropdown data & population
-   ========================= */
-const PLATFORM_OPTIONS = ['DraftKings','FanDuel','Yahoo','ESPN','Sleeper','Other'];
-// before: const SEASONS = Array.from({ length: 12 }, ...).reverse()
-const SEASONS = [2024, 2023, 2022, 2021, 2020];
-const WEEKS   = Array.from({ length: 18 }, (_, i) => i + 1);              // 1..18
-
-let seasonSel, weekSel; // assigned in init()
-
+   =========================
 function initDropdowns() {
   seasonSel = $id('season');
   weekSel   = $id('week');
 
-  fillSelect(seasonSel, SEASONS, 'Select Season');
-  fillSelect(weekSel,   WEEKS.map(w => `Week ${w}`), 'Select Week');
+  // Seasons (keep exactly 2020–2024 as requested)
+  fillSelect(seasonSel, [2024, 2023, 2022, 2021, 2020], 'Select Season');
 
-  fillSelect($id('srcPlatform'), PLATFORM_OPTIONS, 'Select Platform');
+  // Build Week select with Regular Season + Playoffs
+  if (weekSel) {
+    weekSel.innerHTML = ''; // clear
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select Week / Round';
+    weekSel.appendChild(placeholder);
+
+    // Regular Season (1..18)
+    const ogReg = document.createElement('optgroup');
+    ogReg.label = 'Regular Season';
+    for (let w = 1; w <= 18; w++) {
+      const opt = document.createElement('option');
+      opt.value = String(w);         // numeric weeks
+      opt.textContent = `Week ${w}`;
+      ogReg.appendChild(opt);
+    }
+    weekSel.appendChild(ogReg);
+
+    // Playoffs
+    const ogPO = document.createElement('optgroup');
+    ogPO.label = 'Playoffs';
+    [
+      { value: 'WC',  label: 'Wild Card' },
+      { value: 'DIV', label: 'Divisional' },
+      { value: 'CONF',label: 'Conference Championship' },
+      { value: 'SB',  label: 'Super Bowl' },
+    ].forEach(({value, label}) => {
+      const opt = document.createElement('option');
+      opt.value = value;             // non-numeric stages
+      opt.textContent = label;
+      ogPO.appendChild(opt);
+    });
+    weekSel.appendChild(ogPO);
+  }
+
+  // Platforms
+  fillSelect($id('srcPlatform'), ['DraftKings','FanDuel','Yahoo','ESPN','Sleeper','Other'], 'Select Platform');
 }
-
 /* =========
    Tabs init
    ========= */

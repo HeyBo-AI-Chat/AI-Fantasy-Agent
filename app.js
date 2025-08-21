@@ -156,10 +156,38 @@ if (t === 'roster') {
 }
 // ---------- Team Sources (per TEAM) ----------
 async function saveSource() {
-  const team_id = window.APP.TEAM_ID;               // from config.js
-  const platform = document.getElementById('srcPlatform').value.trim();
-  const handle   = document.getElementById('srcHandle').value.trim();
-  const notes    = document.getElementById('srcNotes').value.trim();
+  try {
+    // use the same supabase client you already create at the top
+    const user_id = await getUserId();
+
+    const platform = (document.getElementById('srcPlatform')?.value || '').trim();
+    const handle   = (document.getElementById('srcHandle')?.value || '').trim();
+    const notes    = (document.getElementById('srcNotes')?.value  || '').trim();
+
+    if (!platform || !handle) {
+      alert('Pick a platform and enter the Username / League ID.');
+      return;
+    }
+
+    // INSERT using user_id (your table has user_id, not team_id)
+    const { data, error } = await supabase
+      .from('team_sources')
+      .insert([{ user_id, platform, handle, notes }])
+      .select();
+
+    if (error) {
+      alert('Save failed: ' + error.message);
+      return;
+    }
+
+    // clear inputs + refresh the list
+    document.getElementById('srcHandle').value = '';
+    document.getElementById('srcNotes').value  = '';
+    await loadSources();
+  } catch (e) {
+    alert('JS error: ' + (e?.message || e));
+  }
+}
 
   if (!platform || !handle) {
     alert('Platform and Handle are required');
@@ -180,25 +208,6 @@ async function saveSource() {
   await loadSources(); // refresh list
 }
 
-async function loadSources() {
-  const team_id = window.APP.TEAM_ID;
-  const list = document.getElementById('sourcesList');
-  list.innerHTML = 'Loading...';
-
-  const { data, error } = await supabase
-    .from('team_sources')
-    .select('*')
-    .eq('team_id', team_id)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    list.innerHTML = 'Error: ' + error.message;
-    return;
-  }
-  if (!data || data.length === 0) {
-    list.innerHTML = '<i>No saved platforms yet.</i>';
-    return;
-  }
 
   list.innerHTML = data.map(r => `
     <div class="row" style="justify-content:space-between">

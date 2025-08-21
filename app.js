@@ -475,7 +475,34 @@ el("#btnCompute").onclick = async ()=>{
   });
   await loadScores();
 };
+document.addEventListener('DOMContentLoaded', () => {
+  const TABS = ['draft','roster','lineup','scores','news','agent'];
 
+  function showTab(t) {
+    TABS.forEach(name => {
+      const sec = document.getElementById(`tab-${name}`);
+      const btn = document.querySelector(`.tabbtn[data-t="${name}"]`);
+      if (sec) sec.classList.toggle('hidden', name !== t);
+      if (btn) btn.classList.toggle('active', name === t);
+    });
+
+    // lazy loads (optional)
+    if (t === 'roster' && typeof loadSources === 'function') loadSources();
+    if (t === 'scores' && typeof refreshTeamPoints === 'function') refreshTeamPoints();
+  }
+
+  // bind clicks
+  document.querySelectorAll('.tabbtn').forEach(b => {
+    b.addEventListener('click', (e) => {
+      e.preventDefault(); // safe if any are <a>
+      showTab(b.dataset.t);
+    });
+  });
+
+  // default
+  showTab('draft');
+});
+  
 /* ---------- News ---------- */
 el("#btnRefreshNews").onclick = async ()=>{
   await post(`${A.FUNCS}/refresh_injuries_and_news`, {}).catch(()=>{});

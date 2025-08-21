@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     news:   document.getElementById('tab-news'),
     agent:  document.getElementById('tab-agent'),
   };
-<script src="/app.js?v=2"></script>
+
   function showTab(name){
     Object.entries(sections).forEach(([k,el]) => el && el.classList.toggle('hidden', k !== name));
     tabs.forEach(b => b.classList.toggle('active', b.dataset.t === name));
@@ -227,14 +227,14 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => console.warn('Service Worker registration failed:', err));
     });
   }
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js?v=2', { scope: '/' })
-    .catch(err => console.warn('SW register failed', err));
-}
-</script>
-<script src="./config.js?v=3" defer></script>
-<script src="./app.js?v=4" defer></script>
 
+<!-- 1) Your per‑env config -->
+<script src="/config.js"></script>
+
+<!-- 2) Supabase library (CDN or your bundled version) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<!-- 3) Your app -->
+<script src="/app.js"></script>
 </body>
 </html>

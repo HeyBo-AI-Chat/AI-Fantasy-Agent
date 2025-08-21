@@ -222,10 +222,6 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.warn('SW register failed', err));
 }
 </script>
-  // Remove any leftover demo/placeholder player rows if needed
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.player-row-demo').forEach(el => el.remove());
-  });
 <script src="./config.js?v=3" defer></script>
 <script src="./app.js?v=4" defer></script>
 

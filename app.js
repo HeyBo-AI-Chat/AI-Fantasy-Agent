@@ -1,186 +1,102 @@
-// Supabase client (uses values from window.APP set in config.js)
-const supabase = window.supabase ??
-  window.supabase = window.createClient(
-    window.APP.SUPABASE_URL,
-    window.APP.SUPABASE_ANON
-  );
+/* =========================
+   Config & Supabase client
+   ========================= */
+const APP = window.APP || {};
+// When loaded via <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+// the global is window.supabase.createClient(...)
+const supaCreate = (window.supabase && window.supabase.createClient) || window.createClient;
+if (!supaCreate) console.warn('Supabase library not found. Make sure you include supabase-js on the page.');
 
-// Dev helper: a pseudo user id for now (replaced by real auth later)
-async function getUserId() {
-  // TODO: replace with real Supabase Auth later
-  let id = localStorage.getItem('dev_user_id');
-  if (!id) {
-    // quick uuid-ish
-    id = ([1e7]+-1e3+-4e3+-8e3+-1e11)
-      .replace(/[018]/g, c =>
-        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-      );
-    localStorage.setItem('dev_user_id', id);
-  }
-  return id;
-}
+const supabase = (window._supabaseClient ||= supaCreate?.(APP.SUPABASE_URL, APP.SUPABASE_ANON));
 
-     
-  // Dev mode fallback: keep a stable anonymous uuid in localStorage
-  let id = localStorage.getItem('dev_user_id');
-  if (!id) {
-    // cheap uuid v4-ish
-    id = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-    );
-    localStorage.setItem('dev_user_id', id);
-  }
-  return id;
-}
-// ---------- Supabase Init ----------
-const A = window.APP; // holds your env vars from Vercel
-const supabase = window.supabase.createClient(
-  A.SUPABASE_URL,
-  A.SUPABASE_ANON
-);
-// ---- helpers ----
-const $ = (id) => document.getElementById(id);
-const fillSelect = (sel, items, placeholder = 'Select…') => {
+/* ==============
+   Small helpers
+   ============== */
+const $id  = (id, root = document) => root.getElementById(id);
+const $$   = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const qs   = (p) => Object.entries(p).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+const hdrs = {
+  'Content-Type': 'application/json',
+  'apikey': APP.SUPABASE_ANON,
+  'Authorization': `Bearer ${APP.SUPABASE_ANON}`
+};
+
+function fillSelect(sel, items, placeholder = 'Select…') {
   if (!sel) return;
   sel.innerHTML =
     `<option value="">${placeholder}</option>` +
     items.map(v => `<option value="${v}">${v}</option>`).join('');
-};
-
-// ---- initial data for selects ----
-const PLATFORM_OPTIONS = ['DraftKings', 'FanDuel', 'Yahoo', 'ESPN', 'Sleeper', 'Other'];
-const SEASONS = Array.from({length: 12}, (_,i) => 2018 + i).reverse();   // 2029..2018
-const WEEKS   = Array.from({length: 18}, (_,i) => i + 1);                // 1..18
-
-document.addEventListener('DOMContentLoaded', async () => {
-  // Make sure these IDs exist in your HTML:
-  // <select id="season"></select>
-  // <select id="week"></select>
-  // <select id="srcPlatform"></select>
-  // <input  id="srcHandle">
-  // <textarea id="srcNotes"></textarea>
-  // <button id="btnAddSource">Add Source</button>
-
-  fillSelect($('season'), SEASONS, 'Select Season');
-  fillSelect($('week'),   WEEKS.map(w => `Week ${w}`), 'Select Week');
-  fillSelect($('srcPlatform'), PLATFORM_OPTIONS, 'Select Platform');
-
-  // Wire the Add Source button
-  $('btnAddSource')?.addEventListener('click', addSource);
-});
-
-// ---- Supabase save for team_sources ----
-async function addSource () {
-  const platform = $('srcPlatform')?.value || '';
-  const handle   = $('srcHandle')?.value.trim() || '';
-  const notes    = $('srcNotes')?.value || '';
-
-  if (!platform || !handle) {
-    alert('Platform and Handle / League ID are required');
-    return;
-  }
-  const user_id = await getUserId();              // you already have this helper
-  const { error } = await supabase
-    .from('team_sources')
-    .insert([{ user_id, platform, handle, notes }]);
-
-  if (error) {
-    alert('Save failed: ' + error.message);
-    return;
-  }
-  // Clear and refresh
-  $('srcHandle').value = '';
-  $('srcNotes').value = '';
-  await loadSources?.();                          // if you have this function
-}
-// Optional: headers (if you need fetch calls instead of supabase-js)
-const hdrs = {
-  "Content-Type": "application/json",
-  "apikey": A.SUPABASE_ANON,
-  "Authorization": "Bearer " + A.SUPABASE_ANON
-};
-// ---------- Tabs ----------
-const TABS = ['draft','roster','lineup','scores','news','agent'];
-
-function showTab(t) {
-  TABS.forEach(name => {
-    const sec = document.getElementById(`tab-${name}`);
-    const btn = document.querySelector(`.tabbtn[data-t="${name}"]`);
-    if (sec) sec.classList.toggle('hidden', name !== t);
-    if (btn) btn.classList.toggle('active', name === t);
-  });
-
-  // Lazy-load content per tab if you want
-  if (t === 'roster' && typeof loadSources === 'function') {
-    loadSources();
-  }
-  if (t === 'scores' && typeof refreshTeamPoints === 'function') {
-    refreshTeamPoints();
-  }
 }
 
-document.querySelectorAll('.tabbtn').forEach(b => {
-  b.addEventListener('click', () => showTab(b.dataset.t));
-});
+/* =========================
+   Dev-only user id (no Auth)
+   ========================= */
+async function getUserId() {
+  let id = localStorage.getItem('dev_user_id');
+  if (!id) {
+    id = (crypto?.randomUUID && crypto.randomUUID()) ||
+         ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+           (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+         );
+    localStorage.setItem('dev_user_id', id);
+  }
+  return id;
+}
 
-// default tab
-showTab('draft');
+/* =========================
+   Dropdown data & population
+   ========================= */
+const PLATFORM_OPTIONS = ['DraftKings','FanDuel','Yahoo','ESPN','Sleeper','Other'];
+const SEASONS = Array.from({ length: 12 }, (_, i) => 2018 + i).reverse(); // 2029..2018
+const WEEKS   = Array.from({ length: 18 }, (_, i) => i + 1);              // 1..18
 
-// ---------- Tabs ----------
-const el = s => document.querySelector(s);
-const $ = s => Array.from(document.querySelectorAll(s));
+let seasonSel, weekSel; // assigned in init()
 
-$(".tabbtn").forEach(b => {
-  b.onclick = () => {
-    $(".tabbtn").forEach(x => x.classList.remove("active"));
-    b.classList.add("active");
-    const name = b.dataset.t;
-    ["draft","roster","lineup","scores"].forEach(t =>
-      el(`#tab-${t}`).classList.toggle("hidden", t !== name)
-    );
+function initDropdowns() {
+  seasonSel = $id('season');
+  weekSel   = $id('week');
+
+  fillSelect(seasonSel, SEASONS, 'Select Season');
+  fillSelect(weekSel,   WEEKS.map(w => `Week ${w}`), 'Select Week');
+
+  fillSelect($id('srcPlatform'), PLATFORM_OPTIONS, 'Select Platform');
+}
+
+/* =========
+   Tabs init
+   ========= */
+function initTabs() {
+  const sections = {
+    draft:  $id('tab-draft'),
+    roster: $id('tab-roster'),
+    lineup: $id('tab-lineup'),
+    scores: $id('tab-scores'),
+    news:   $id('tab-news'),
+    agent:  $id('tab-agent')
   };
-}); 
-// -------- Remove leftover demo points line, if present --------
-document.addEventListener('DOMContentLoaded', () => {
-  const demo = Array.from(document.querySelectorAll('*'))
-    .find(n => n.childNodes && [...n.childNodes].some(c =>
-      c.nodeType === 3 && /Stefon\s+Diggs\s*[\s\S]*Pts:\s*0\.0/i.test(c.textContent || '')
-    ));
-  if (demo) demo.remove();
-});
-if (t === 'roster') {
-  async function saveSource() {
-  const platform = document.getElementById('srcPlatform')?.value?.trim();
-  const handle   = document.getElementById('srcHandle')?.value?.trim();
-  const notes    = document.getElementById('srcNotes')?.value?.trim();
 
-  if (!platform || !handle) {
-    alert('Platform and Handle are required');
-    return;
+  function showTab(name) {
+    Object.entries(sections).forEach(([k, el]) => el && el.classList.toggle('hidden', k !== name));
+    $$('.tabbtn').forEach(b => b.classList.toggle('active', b.dataset.t === name));
+    localStorage.setItem('active_tab', name);
+
+    if (name === 'roster') loadSources().catch(()=>{});
+    if (name === 'scores') refreshTeamPoints().catch(()=>{});
   }
 
-  const user_id = await getUserId();
-  const { error } = await supabase
-    .from('team_sources')
-    .insert([{ user_id, platform, handle, notes }]);
-
-  if (error) {
-    alert('Save failed: ' + error.message);
-    return;
-  }
-
-  document.getElementById('srcPlatform').value = '';
-  document.getElementById('srcHandle').value   = '';
-  document.getElementById('srcNotes').value    = '';
-  await loadSources();
+  $$('.tabbtn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.t)));
+  showTab(localStorage.getItem('active_tab') || 'draft');
 }
 
-  async function loadSources() {
-  const user_id = await getUserId();
-  const list = document.getElementById('linkedSources');
+/* =========================
+   Linked Sources (per user)
+   ========================= */
+async function loadSources() {
+  const list = $id('linkedSources') || $id('sourcesList');
   if (!list) return;
 
-  list.innerHTML = 'Loading...';
+  list.innerHTML = 'Loading…';
+  const user_id = await getUserId();
 
   const { data, error } = await supabase
     .from('team_sources')
@@ -189,10 +105,9 @@ if (t === 'roster') {
     .order('created_at', { ascending: false });
 
   if (error) {
-    list.innerHTML = 'Error: ' + error.message;
+    list.innerHTML = `<div class="badge" style="color:#ff6b6b">Error: ${error.message}</div>`;
     return;
   }
-
   if (!data || data.length === 0) {
     list.innerHTML = '<i>No saved platforms yet.</i>';
     return;
@@ -202,928 +117,266 @@ if (t === 'roster') {
     <div class="row" style="justify-content:space-between;align-items:center;margin:.5rem 0;">
       <div>
         <b>${r.platform}</b> — ${r.handle}
-        ${r.notes ? `<div style="opacity:.7;font-size:.9em">${r.notes}</div>` : ''}
+        ${r.notes ? `<div class="badge" style="opacity:.8">${r.notes}</div>` : ''}
       </div>
-      <button class="btn muted" data-id="${r.id}" disabled>⋯</button>
+      <button class="btn muted" data-del="${r.id}">Delete</button>
     </div>
   `).join('');
-}
-// ---------- Team Sources (per TEAM) ----------
-async function saveSource() {
-  try {
-    // use the same supabase client you already create at the top
-    const user_id = await getUserId();
 
-    const platform = (document.getElementById('srcPlatform')?.value || '').trim();
-    const handle   = (document.getElementById('srcHandle')?.value || '').trim();
-    const notes    = (document.getElementById('srcNotes')?.value  || '').trim();
-
-    if (!platform || !handle) {
-      alert('Pick a platform and enter the Username / League ID.');
-      return;
-    }
-
-    // INSERT using user_id (your table has user_id, not team_id)
-    const { data, error } = await supabase
-      .from('team_sources')
-      .insert([{ user_id, platform, handle, notes }])
-      .select();
-
-    if (error) {
-      alert('Save failed: ' + error.message);
-      return;
-    }
-
-    // clear inputs + refresh the list
-    document.getElementById('srcHandle').value = '';
-    document.getElementById('srcNotes').value  = '';
-    await loadSources();
-  } catch (e) {
-    alert('JS error: ' + (e?.message || e));
-  }
-}
-
-  if (!platform || !handle) {
-    alert('Platform and Handle are required');
-    return;
-  }
-
-  const { error } = await supabase
-    .from('team_sources')
-    .insert([{ team_id, platform, handle, notes }]);
-
-  if (error) {
-    alert('Save failed: ' + error.message);
-    return;
-  }
-  document.getElementById('srcPlatform').value = '';
-  document.getElementById('srcHandle').value   = '';
-  document.getElementById('srcNotes').value    = '';
-  await loadSources(); // refresh list
-}
-
-
-  list.innerHTML = data.map(r => `
-    <div class="row" style="justify-content:space-between">
-      <div>
-        <b>${r.platform}</b> — ${r.handle}
-        ${r.notes ? `<div style="opacity:.8">${r.notes}</div>` : ''}
-      </div>
-      <button class="btn muted" data-id="${r.id}" onclick="deleteSource('${r.id}')">Delete</button>
-    </div>
-  `).join('');
-}
-
-async function deleteSource(id) {
-  const { error } = await supabase.from('team_sources').delete().eq('id', id);
-  if (error) { alert('Delete failed: ' + error.message); return; }
-  await loadSources();
-}
-
-// wire up button and load on page/tabs
-document.getElementById('btnAddSource').onclick = saveSource;
-// call loadSources() either on page load or when the Roster tab becomes active:
-loadSources();
-// ---------- Selectors ----------
-const years = [2020,2021,2022,2023,2024];
-const seasonSel = el("#season");
-seasonSel.innerHTML = years.map(y => `<option>${y}</option>`).join("");
-
-const weekSel = el("#week");
-weekSel.innerHTML = Array.from({length: 18}, (_, i) => 
-  `<option>Week ${i+1}</option>`
-).join("");
-document.getElementById('btnAddSource')?.addEventListener('click', async () => {
-  const platform = (document.getElementById('srcPlatform')?.value || '').trim();
-  const handle   = (document.getElementById('srcHandle')?.value || '').trim();
-  const notes    = (document.getElementById('srcNotes')?.value || '').trim();
-  if (!platform || !handle) { alert('Platform and handle are required'); return; }
-
-  const user_id = await getUserId();
-  const { error } = await supabase.from('team_sources').insert([{ user_id, platform, handle, notes }]);
-  if (error) { alert('Save failed: ' + error.message); return; }
-
-  // clear inputs and refresh the list
-  document.getElementById('srcPlatform').value = '';
-  document.getElementById('srcHandle').value   = '';
-  document.getElementById('srcNotes').value    = '';
-  await loadSources();
-});
-// ---------- Realtime subscription for team points ----------
-function subscribeTeamPoints() {
-  const team_id = window.APP.TEAM_ID;
-
-  const channel = supabase.channel('team-points-' + team_id)
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'fantasy_points', filter: `team_id=eq.${team_id}` },
-      payload => {
-        // Re-render your points UI here.
-        // For example, re-fetch team totals or append the new row:
-        refreshTeamPoints();
-      }
-    )
-    .subscribe();
-}
-
-async function refreshTeamPoints() {
-  const team_id = window.APP.TEAM_ID;
-  const { data, error } = await supabase
-    .from('fantasy_points')
-    .select('*')
-    .eq('team_id', team_id)
-    .order('created_at', { ascending: false })
-    .limit(50);
-
-if (error) {
-    if (box) box.innerHTML = 'Error: ' + error.message;
-    return;
-  }
-
-  // Render into the SCORES tab container:
-  if (box) {
-    box.innerHTML = (data && data.length)
-      ? data.map(r => `
-          <div class="row" style="justify-content:space-between">
-            <div>${r.player_id}</div>
-            <div><b>${Number(r.total_points).toFixed(1)}</b></div>
-          </div>
-        `).join('')
-      : '<i>No scores yet.</i>';
-  }
-}
-async function computeScores({ week, season, team_id }) {
-  // any of these can be optional; your function can pick defaults
-  const payload = { week, season, team_id };
-  const { data, error } = await supabase.functions.invoke('compute-scores', {
-    body: payload
-  });
-  if (error) {
-    alert('Compute failed: ' + error.message);
-    return;
-  }
-  alert('Scoring job started.');
-}
-document.getElementById('computeBtn')?.addEventListener('click', async () => {
-  // put your own current week/season/team logic here
-  const week = Number(document.getElementById('weekSelect')?.value || 1);
-  const season = Number(new Date().getFullYear());
-  const team_id = window.APP?.TEAM_ID || 'demo-team-1';
-  await computeScores({ week, season, team_id });
-});
-  // call once on load and keep the realtime subscription active
-subscribeTeamPoints();
-refreshTeamPoints();
-document.getElementById('srcSaveBtn')?.addEventListener('click', saveSource);
-
-// If you have tab buttons, call loadSources() when "Roster" is shown.
-// Or just:
-window.addEventListener('DOMContentLoaded', () => {
-  loadSources(); // optional to show immediately
-});
-  /* ---------- Helpers ---------- */
-const qs = p => Object.entries(p).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join("&");
-const get = (url) => fetch(url, { headers: hdrs }).then(r=>r.json());
-const post = (url, body={}) => fetch(url,{ method:"POST", headers: hdrs, body: JSON.stringify(body)}).then(r=>r.json());
-const patch = (url, body={}) => fetch(url,{ method:"PATCH", headers: hdrs, body: JSON.stringify(body)}).then(r=>r.json());
-
-/* ---------- Voice (STT + TTS) ---------- */
-let TTS_ENABLED = false;
-let recognizing = false;
-let recognition = null;
-
-function speak(text) {
-  try {
-    if (!TTS_ENABLED) return;
-    if (!("speechSynthesis" in window)) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1; u.pitch = 1; u.volume = 1; u.lang = "en-US";
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  } catch {}
-}
-function setupRecognition() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return null;
-  const r = new SR();
-  r.lang = "en-US";
-  r.interimResults = true;
-  r.continuous = true;
-  r.maxAlternatives = 1;
-
-  r.onstart = () => { recognizing = true; el("#voiceStatus").textContent = "Listening…"; };
-  r.onend   = () => { recognizing = false; el("#voiceStatus").textContent = "Mic idle"; };
-  r.onerror = (e) => { recognizing = false; el("#voiceStatus").textContent = `Mic error: ${e.error}`; };
-
-  let finalText = "";
-  r.onresult = (ev) => {
-    let interim = "";
-    for (let i = ev.resultIndex; i < ev.results.length; i++) {
-      const res = ev.results[i];
-      if (res.isFinal) finalText += res[0].transcript;
-      else interim += res[0].transcript;
-    }
-    el("#agentInput").value = (finalText + " " + interim).trim();
-  };
-  return r;
-}
-function startListening() {
-  if (!recognition) recognition = setupRecognition();
-  if (!recognition) {
-    el("#voiceStatus").textContent = "Speech input not supported on this browser.";
-    return;
-  }
-  try { recognition.start(); } catch {}
-}
-function stopListening() { try { recognition && recognition.stop(); } catch {} }
-
-el("#btnTTS").onclick = () => {
-  TTS_ENABLED = !TTS_ENABLED;
-  el("#btnTTS").textContent = TTS_ENABLED ? "🔊 Speak: On" : "🔈 Speak: Off";
-  if (TTS_ENABLED) speak("Speech enabled.");
-};
-const micBtn = el("#btnMic");
-micBtn.addEventListener("touchstart", (e) => { e.preventDefault(); startListening(); micBtn.textContent = "🎙️ Listening"; }, {passive:false});
-micBtn.addEventListener("touchend",   (e) => { e.preventDefault(); micBtn.textContent = "🎤 Hold"; stopListening(); sendAgentIfReady(); }, {passive:false});
-micBtn.addEventListener("mousedown",  ()  => { startListening(); micBtn.textContent = "🎙️ Listening"; });
-micBtn.addEventListener("mouseup",    ()  => { micBtn.textContent = "🎤 Hold"; stopListening(); sendAgentIfReady(); });
-function sendAgentIfReady(){ const msg = el("#agentInput").value.trim(); if(msg) el("#btnAsk").click(); }
-
-/* ---------- Data Loads ---------- */
-async function loadDraft() {
-  const season = Number(seasonSel.value), week = Number(weekSel.value);
-  const url = `${A.SUPABASE_URL}/rest/v1/weekly_stats?` + qs({
-    select:"player_id,position,team_id,season,week,fantasy_ppr,players(player_name)",
-    "sport":"eq:nfl", "season":"eq:"+season, "week":"eq:"+week,
-    "order":"fantasy_ppr.desc", "limit":200
-  });
-  const data = await get(url);
-  el("#draftCount").textContent = data.length;
-  el("#draftList").innerHTML = data.map(row=>`
-    <div class="card">
-      <div class="row spread">
-        <div>
-          <div><b>${row.players?.player_name||row.player_id}</b></div>
-          <div class="badge">${row.team_id||""} · ${row.position||""}</div>
-        </div>
-        <div style="text-align:right">
-          <div><b>${Number(row.fantasy_ppr||0).toFixed(2)}</b> PPR</div>
-          <button class="btn muted" data-add="${row.player_id}" data-pos="${row.position||""}">Add</button>
-        </div>
-      </div>
-    </div>`).join("");
-  $("#draftList .btn").forEach(btn=>{
-    btn.onclick = async ()=>{
-      const player_id = btn.dataset.add, position = btn.dataset.pos;
-      const url = `${A.SUPABASE_URL}/rest/v1/team_roster`;
-      const body = { team_id:A.TEAM_ID, season:Number(seasonSel.value), player_id, position, acquired:"draft" };
-      await fetch(url,{method:"POST", headers:hdrs, body:JSON.stringify(body)});
-      await loadRoster();
-      alert("Added to roster");
-    };
-  });
-}
-async function loadRoster() {
-  const url = `${A.SUPABASE_URL}/rest/v1/team_roster?` + qs({
-    select:"player_id,position,players(player_name,team_id,position)",
-    "team_id":"eq:"+A.TEAM_ID, "season":"eq:"+Number(seasonSel.value)
-  });
-  const data = await get(url);
-  el("#rosterCount").textContent = data.length;
-  el("#rosterList").innerHTML = data.map(r=>`
-    <div class="card">
-      <div class="row spread">
-        <div>
-          <div><b>${r.players?.player_name||r.player_id}</b></div>
-          <div class="badge">${r.players?.team_id||""} · ${r.position||""}</div>
-        </div>
-        <div class="row" style="gap:6px">
-          <button class="btn" data-starter="${r.player_id}">Starter</button>
-          <button class="btn muted" data-bench="${r.player_id}">Bench</button>
-        </div>
-      </div>
-    </div>`).join("");
-  $("#rosterList [data-starter]").forEach(b=> b.onclick = ()=>{ starters.add(b.dataset.starter); bench.delete(b.dataset.starter); renderLineup(); });
-  $("#rosterList [data-bench]").forEach(b=> b.onclick = ()=>{ bench.add(b.dataset.bench); starters.delete(b.dataset.bench); renderLineup(); });
-}
-
-/* ---------- Lineup ---------- */
-const starters = new Set();
-const bench = new Set();
-function renderLineup(){
-  el("#starters").innerHTML = Array.from(starters).map(id=>`<div class="badge">${id}</div>`).join("") || `<div class="badge">No starters selected</div>`;
-  el("#bench").innerHTML    = Array.from(bench).map(id=>`<div class="badge">${id}</div>`).join("")    || `<div class="badge">No bench selected</div>`;
-}
-el("#btnSaveLineup").onclick = async ()=>{
-  const url = `${A.SUPABASE_URL}/rest/v1/weekly_lineups?` + qs({
-    "team_id":"eq:"+A.TEAM_ID, "season":"eq:"+Number(seasonSel.value), "week":"eq:"+Number(weekSel.value)
-  });
-  const body = { starters: Array.from(starters), bench: Array.from(bench) };
-  await patch(url, body);
-  alert("Lineup saved");
-};
-
-/* ---------- Scores ---------- */
-async function loadScores(){
-  const url = `${A.SUPABASE_URL}/rest/v1/team_week_scores?` + qs({
-    select:"team_id,season,week,points,breakdown",
-    "season":"eq:"+Number(seasonSel.value), "week":"eq:"+Number(weekSel.value)
-  });
- <div id="scores">
-  <div id="scoresList"></div>
-</div>
-   const data = await get(url);
-  el("#scoresList").innerHTML = data.map(r=>`
-    <div class="card">
-      <div class="row spread"><b>${r.team_id}</b><b>${Number(r.points||0).toFixed(2)}</b></div>
-      <div class="badge">${Object.entries(r.breakdown||{}).slice(0,6).map(([pid,pts])=>`${pid}:${Number(pts).toFixed(1)}`).join(" · ")}</div>
-    </div>`).join("");
-}
-el("#btnCompute").onclick = async ()=>{
-  await post(`${A.FUNCS}/compute_week_scores`, {
-    league_id: A.LEAGUE_ID,
-    season: Number(seasonSel.value),
-    week: Number(weekSel.value)
-  });
-  await loadScores();
-};
-document.addEventListener('DOMContentLoaded', () => {
-  const TABS = ['draft','roster','lineup','scores','news','agent'];
-
-  function showTab(t) {
-    TABS.forEach(name => {
-      const sec = document.getElementById(`tab-${name}`);
-      const btn = document.querySelector(`.tabbtn[data-t="${name}"]`);
-      if (sec) sec.classList.toggle('hidden', name !== t);
-      if (btn) btn.classList.toggle('active', name === t);
-    });
-
-    // lazy loads (optional)
-    if (t === 'roster' && typeof loadSources === 'function') loadSources();
-    if (t === 'scores' && typeof refreshTeamPoints === 'function') refreshTeamPoints();
-  }
-
-  // bind clicks
-  document.querySelectorAll('.tabbtn').forEach(b => {
-    b.addEventListener('click', (e) => {
-      e.preventDefault(); // safe if any are <a>
-      showTab(b.dataset.t);
+  // wire deletes
+  list.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-del');
+      const { error: delErr } = await supabase.from('team_sources').delete().eq('id', id);
+      if (delErr) alert('Delete failed: ' + delErr.message);
+      else loadSources();
     });
   });
-
-  // default
-  showTab('draft');
-});
-  
-/* ---------- News ---------- */
-el("#btnRefreshNews").onclick = async ()=>{
-  await post(`${A.FUNCS}/refresh_injuries_and_news`, {}).catch(()=>{});
-  await loadNews();
-};
-async function loadNews(){
-  const url = `${A.SUPABASE_URL}/rest/v1/news_items?` + qs({
-    select:"published_at,source,title,url,impact_tag", "order":"published_at.desc", "limit":100
-  });
-  const data = await get(url);
-  el("#newsList").innerHTML = data.map(n=>`
-    <a class="card" href="${n.url}" target="_blank" rel="noopener">
-      <div><b>${n.source}</b> — <span class="badge">${new Date(n.published_at).toLocaleString()}</span></div>
-      <div>${n.title}</div>
-      <div class="badge">${n.impact_tag||"GENERAL"}</div>
-    </a>`).join("");
 }
 
-/* ---------- Agent ---------- */
-el("#btnAsk").onclick = async ()=>{
-  const msg = el("#agentInput").value.trim();
-  if(!msg) return;
-  const thinking = "Thinking…";
-  el("#agentReply").textContent = thinking;
-  speak(thinking);
-  const res = await post(`${A.FUNCS}/agent_router`, {
-    message: msg,
-    sport: "nfl",
-    season: Number(seasonSel.value),
-    week: Number(weekSel.value),
-    task: "reason"
-  });
-  const reply = (res && (res.reply || res.message || res.text)) || "No reply.";
-  el("#agentReply").textContent = reply;
-  speak(reply);
-};
-// Add external source (per-user)
-document.getElementById('btnAddSource').onclick = async () => {
-  const platform = document.getElementById('srcPlatform').value.trim();
-  const handle   = document.getElementById('srcHandle').value.trim();
-  const notes    = document.getElementById('srcNotes').value.trim();
+async function addSource() {
+  const platform = ($id('srcPlatform')?.value || '').trim();
+  const handle   = ($id('srcHandle')?.value   || '').trim();
+  const notes    = ($id('srcNotes')?.value    || '').trim();
 
   if (!platform || !handle) {
-    alert('Platform and Handle are required.');
+    alert('Platform and Handle / League ID are required');
     return;
   }
 
   const user_id = await getUserId();
-
   const { error } = await supabase
     .from('team_sources')
     .insert([{ user_id, platform, handle, notes }]);
 
   if (error) {
     alert('Save failed: ' + error.message);
-  } else {
-    document.getElementById('srcPlatform').value = '';
-    document.getElementById('srcHandle').value = '';
-    document.getElementById('srcNotes').value = '';
-    await loadSources(); // refresh list
+    return;
   }
-};
-/* ---------- Init ---------- */
-(async function init(){
-  await loadDraft();
-  await loadRoster();
-  await loadScores();
-  await loadNews().catch(()=>{});
-  seasonSel.onchange = ()=>{ loadDraft(); loadRoster(); loadScores(); };
-  weekSel.onchange   = ()=>{ loadDraft(); loadScores(); };
-})();
-// ---------- Profile Upload (add this at the END of app.js) ----------
-document.getElementById("uploadProfile").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
 
-  // Preview before upload
-  const url = URL.createObjectURL(file);
-  document.getElementById("profilePreview").src = url;
+  if ($id('srcHandle')) $id('srcHandle').value = '';
+  if ($id('srcNotes'))  $id('srcNotes').value  = '';
 
-  // Upload to Supabase Storage
-  const { data, error } = await supabase.storage
-    .from("profile-pics")
-    .upload(`users/${Date.now()}-${file.name}`, file);
-
-  if (error) {
-    alert("Upload failed: " + error.message);
-  } else {
-    alert("Profile saved!");
-  }
-});
-document.getElementById("saveTeam").addEventListener("click", async () => {
-  const platform = document.getElementById("platform").value;
-  const leagueId = document.getElementById("leagueId").value;
-  const teamName = document.getElementById("teamName").value;
-
-  const { data, error } = await supabase.from("teams_user").insert([
-    { platform, league_id: leagueId, team_name: teamName, user_id: (await supabase.auth.getUser()).data.user.id }
-  ]);
-
-  if (error) {
-    alert("Error saving team: " + error.message);
-  } else {
-    alert("Team saved!");
-  }
-});
-document.getElementById('avatarFile').addEventListener('change', async (e) => {
-  const f = e.target.files?.[0];
-  if (!f) return;
-  const supa = window._supa(); // createClient already provided in app.js
-  const path = `${Date.now()}-${f.name.replace(/\s+/g,'_')}`;
-  const { error } = await supa.storage.from('avatars').upload(path, f, { upsert: true });
-  if (error) return toast(error.message);
-  const { data } = supa.storage.from('avatars').getPublicUrl(path);
-  document.getElementById('avatarPreview').src = data.publicUrl;
-
-  // optionally persist to a user/team table
-  // await supa.from('teams_user').update({ avatar_url: data.publicUrl }).eq('team_id', APP.TEAM_ID);
-});
-// ---------- External Platform Sources (Roster tab) ----------
-
-// helper: render list of sources for this team
-async function loadSources() {
-  const list = document.getElementById("sourcesList");
-  list.innerHTML = "Loading...";
-// simple user id placeholder (swap for Auth later)
-async function getUserId() {
-  let id = localStorage.getItem('user_id');
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem('user_id', id);
-  }
-  return id;
+  await loadSources();
 }
 
-window.deleteSource = async (id) => {
-  const { error } = await supabase.from('team_sources').delete().eq('id', id);
-  if (error) alert('Delete failed: ' + error.message);
-  else await loadSources();
-};
-  const { data, error } = await supabase
-    .from("team_sources")
-    .select("*")
-    .eq("team_id", A.TEAM_ID)
-    .order("created_at", { ascending: false });
+/* ========================
+   Draft / Roster / Lineup
+   ======================== */
+async function getJSON(url) {
+  const r = await fetch(url, { headers: hdrs });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
 
-  if (error) {
-    list.innerHTML = `<div class="badge" style="color:#ff6666">Load failed: ${error.message}</div>`;
-    return;
-  }
+async function loadDraft() {
+  const season = Number(seasonSel?.value || new Date().getFullYear());
+  const week   = Number((weekSel?.value || 'Week 1').replace('Week ','') || 1);
 
-  if (!data || data.length === 0) {
-    list.innerHTML = `<div class="badge">No sources yet.</div>`;
-    return;
-  }
+  const url = `${APP.SUPABASE_URL}/rest/v1/weekly_stats?` + qs({
+    select: "player_id,position,team_id,season,week,fantasy_ppr,players(player_name)",
+    sport: "eq:nfl",
+    season: "eq:"+season,
+    week: "eq:"+week,
+    order: "fantasy_ppr.desc",
+    limit: 200
+  });
+
+  const data = await getJSON(url).catch(()=>[]);
+  const list = $id('draftList');
+  const count = $id('draftCount');
+  if (count) count.textContent = data.length;
+  if (!list) return;
 
   list.innerHTML = data.map(row => `
-    <div class="row" style="justify-content:space-between; margin:6px 0; gap:8px">
-      <div>
-        <b>${row.platform}</b> &mdash; ${row.handle}
-        ${row.notes ? `<div class="badge">${row.notes}</div>` : ""}
+    <div class="card">
+      <div class="row spread">
+        <div>
+          <div><b>${row.players?.player_name || row.player_id}</b></div>
+          <div class="badge">${row.team_id || ''} · ${row.position || ''}</div>
+        </div>
+        <div style="text-align:right">
+          <div><b>${Number(row.fantasy_ppr||0).toFixed(2)}</b> PPR</div>
+          <button class="btn muted" data-add="${row.player_id}" data-pos="${row.position||''}">Add</button>
+        </div>
       </div>
-      <button class="btn muted" data-del="${row.id}" style="padding:6px 10px">Delete</button>
     </div>
-  `).join("");
+  `).join('');
 
-  // attach delete handlers
-  list.querySelectorAll("[data-del]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const id = btn.getAttribute("data-del");
-      const { error: delErr } = await supabase.from("team_sources").delete().eq("id", id);
-      if (delErr) {
-        alert("Delete failed: " + delErr.message);
-      } else {
-        loadSources();
-      }
+  // optional: wire "Add" buttons if you use a roster table
+  $$('#draftList [data-add]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      alert('Add-to-roster not wired to a table yet.');
     });
   });
 }
 
-// add handler for the add button
-document.getElementById("btnAddSource").addEventListener("click", async () => {
-  const platform = document.getElementById("srcPlatform").value.trim();
-  const handle   = document.getElementById("srcHandle").value.trim();
-  const notes    = document.getElementById("srcNotes").value.trim();
-  const status   = document.getElementById("srcStatus");
+async function loadRoster() {
+  // Wire to your own view/table if you have it; otherwise noop
+  const list = $id('rosterList');
+  const count = $id('rosterCount');
+  if (list) list.innerHTML = '';
+  if (count) count.textContent = '0';
+}
 
-  if (!platform || !handle) {
-    status.textContent = "Platform and handle required.";
-    return;
-  }
+const starters = new Set();
+const bench    = new Set();
 
-  status.textContent = "Saving...";
+function renderLineup() {
+  const startersBox = $id('starters');
+  const benchBox    = $id('bench');
+  if (startersBox) startersBox.innerHTML = Array.from(starters).map(id => `<div class="badge">${id}</div>`).join('') || `<div class="badge">No starters selected</div>`;
+  if (benchBox)    benchBox.innerHTML    = Array.from(bench).map(id => `<div class="badge">${id}</div>`).join('')    || `<div class="badge">No bench selected</div>`;
+}
 
-  const { error } = await supabase.from("team_sources").insert({
-    team_id: A.TEAM_ID,
-    platform,
-    handle,
-    notes
+/* =======
+   Scores
+   ======= */
+async function loadScores() {
+  const season = Number(seasonSel?.value || new Date().getFullYear());
+  const week   = Number((weekSel?.value || 'Week 1').replace('Week ','') || 1);
+
+  const url = `${APP.SUPABASE_URL}/rest/v1/team_week_scores?` + qs({
+    select: "team_id,season,week,points,breakdown",
+    season: "eq:" + season,
+    week:   "eq:" + week
   });
 
-  if (error) {
-    status.textContent = "Save failed: " + error.message;
-  } else {
-    status.textContent = "Saved!";
-    document.getElementById("srcHandle").value = "";
-    document.getElementById("srcNotes").value = "";
-    loadSources();
-    setTimeout(() => status.textContent = "", 1500);
-  }
-});
+  const data = await getJSON(url).catch(()=>[]);
+  const list = $id('scoresList');
+  if (!list) return;
 
-// load sources when the page initializes
-loadSources();
-// --- Live fantasy points subscription -------------------------------
-function populateIfEmpty(sel, items) {
-  if (!sel || sel.options.length > 0) return;
-  items.forEach(({ value, label, disabled, selected }) => {
-    const opt = document.createElement('option');
-    opt.value = value ?? label;
-    opt.textContent = label ?? String(value);
-    if (disabled) opt.disabled = true;
-    if (selected) opt.selected = true;
-    sel.appendChild(opt);
-  });
-}
-
-function initDropdowns() {
-  populateIfEmpty(document.getElementById('srcPlatform'), [
-    { value: '', label: 'Select Platform', disabled: true, selected: true },
-    { label: 'DraftKings' }, { label: 'FanDuel' }, { label: 'Yahoo' },
-    { label: 'ESPN' }, { label: 'Sleeper' }, { label: 'Other' },
-  ]);
-
-  populateIfEmpty(document.getElementById('season'), [
-    { value: '', label: 'Select Season', disabled: true, selected: true },
-    { label: '2024' }, { label: '2023' }, { label: '2022' },
-  ]);
-
-  populateIfEmpty(document.getElementById('week'), [
-    { value: '', label: 'Select Week', disabled: true, selected: true },
-    ...Array.from({ length: 18 }, (_, i) => ({ label: String(i + 1) })),
-  ]);
-}
-
-document.addEventListener('DOMContentLoaded', initDropdowns);
-async function getUserId() {
-  // TEMP: until Auth is added. If you switched schema to user_id, use whatever
-  // stable per-user id you’re using. Otherwise return null to listen to all.
-  // Example: a device-based UUID in localStorage.
-  let uid = localStorage.getItem('afa_user_id');
-  if (!uid) {
-    uid = crypto.randomUUID();
-    localStorage.setItem('afa_user_id', uid);
-  }
-  return uid;
-}
-
-function updatePointsInDOM(row) {
-  // row must have: player_id, total_points (or points)
-  const pid = row.player_id || row.playerid || row.pid;
-  if (!pid) return;
-
-  const node = document.querySelector(`[data-player-id="${pid}"] .pts`);
-  if (!node) return;
-
-  const pts = row.total_points ?? row.points ?? row.fantasy_points ?? 0;
-  node.textContent = Number(pts).toFixed(1);
-}
-
-let fpChannel = null;
-
-function subscribeFantasyPoints(team_id) {
-  const channel = supabase.channel('fp-updates')
-    .on('postgres_changes',
-      { event: '*', schema: 'public', table: 'fantasy_points' },
-      () => refreshTeamPoints(team_id))
-    .subscribe();
-  return channel;
-}
-
-async function refreshTeamPoints(team_id) {
-  const { data, error } = await supabase
-    .from('fantasy_points')
-    .select('*')
-    .eq('team_id', team_id)
-    .order('created_at', { ascending: false })
-    .limit(50);
-
-  if (error) return console.log(error);
-
-  // TODO: render into your Scores tab container
-  const el = document.getElementById('scoresList');
-  if (!el) return;
-  el.innerHTML = (data || []).map(r => `
-    <div>${r.player_id} — ${r.total_points ?? r.points ?? 0}</div>
-  `).join('');
-}
-
-// Kick it off
-const _team = window.APP?.TEAM_ID || 'demo-team-1';
-subscribeFantasyPoints(_team);
-refreshTeamPoints(_team);
-      (payload) => {
-        // payload.new on INSERT/UPDATE; payload.old on DELETE
-        const row = payload.new ?? payload.old;
-        if (!row) return;
-        updatePointsInDOM(row);
-      }
-    )
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log('[Realtime] Subscribed to fantasy_points');
-      }
-    });
-
-  // Optional: seed current points once on load
-  seedCurrentPoints(userId).catch(console.error);
-
-  // Clean up on page close
-  window.addEventListener('beforeunload', () => {
-    if (fpChannel) {
-      supabase.removeChannel(fpChannel);
-      fpChannel = null;
-    }
-  });
-}
-
-async function seedCurrentPoints(userId) {
-  // Initial load to populate existing values before realtime updates roll in.
-  let q = supabase.from('fantasy_points').select('*');
-  if (userId) q = q.eq('user_id', userId);
-
-  const { data, error } = await q.limit(1000);
-  if (error) {
-    console.warn('seedCurrentPoints error', error);
-    return;
-  }
-  (data || []).forEach(updatePointsInDOM);
-}
-
-// Call this once when your app starts (e.g., after your DOM is ready)
-subscribeFantasyPoints();
-const activeSeason = window.APP.SEASON_DEFAULT;
-const activeWeek = window.APP.WEEK_DEFAULT;
-
-const filterParts = [];
-if (userId) filterParts.push(`user_id=eq.${userId}`);
-filterParts.push(`season=eq.${activeSeason}`);
-filterParts.push(`week=eq.${activeWeek}`);
-// --- Render helper for the "Scores" tab ---
-async function loadTeamPoints() {
-  const t = document.getElementById('scoresList');
-  if (!t) return;
-
-  const team_id = window.APP.TEAM_ID; // set this somewhere in APP
-  t.innerHTML = 'Loading...';
-
-  const { data, error } = await supabase
-    .from('fantasy_points')
-    .select('*')
-    .eq('team_id', team_id)
-    .order('updated_at', { ascending: false })
-    .limit(100);
-
-  if (error) { t.innerHTML = 'Error: ' + error.message; return; }
-  if (!data || data.length === 0) { t.innerHTML = '<i>No points yet</i>'; return; }
-
-  t.innerHTML = data.map(r => `
-    <div class="row" style="justify-content:space-between;gap:12px">
-      <div>
-        <b>${r.player_id}</b>
-        <div style="opacity:.7;font-size:.9em">
-          W${r.week} • ${r.season} • ${r.game_id ?? ''}</div>
-      </div>
-      <div><b>${Number(r.points ?? r.total_points ?? 0).toFixed(1)}</b></div>
+  list.innerHTML = data.map(r => `
+    <div class="card">
+      <div class="row spread"><b>${r.team_id}</b><b>${Number(r.points||0).toFixed(2)}</b></div>
+      <div class="badge">${
+        Object.entries(r.breakdown || {})
+          .slice(0, 6)
+          .map(([pid, pts]) => `${pid}: ${Number(pts).toFixed(1)}`)
+          .join(' · ')
+      }</div>
     </div>
   `).join('');
 }
 
-// Call once on page load and whenever the Scores tab is shown
-window.addEventListener('DOMContentLoaded', () => {
-  loadTeamPoints();
-});
-const filter = filterParts.join('&'); // e.g. "user_id=eq.X&season=eq.2024&week=eq.1"
-// --- Compute button -> Edge Function ---
-document.getElementById('computeBtn')?.addEventListener('click', async () => {
+async function refreshTeamPoints() {
+  // Simple placeholder: reuse loadScores to refresh UI
+  await loadScores();
+}
+
+/* =====
+   News
+   ===== */
+async function loadNews() {
+  const url = `${APP.SUPABASE_URL}/rest/v1/news_items?` + qs({
+    select: "published_at,source,title,url,impact_tag",
+    order:  "published_at.desc",
+    limit:  100
+  });
+  const data = await getJSON(url).catch(()=>[]);
+  const list = $id('newsList');
+  if (!list) return;
+  list.innerHTML = data.map(n => `
+    <a class="card" href="${n.url}" target="_blank" rel="noopener">
+      <div><b>${n.source}</b> — <span class="badge">${new Date(n.published_at).toLocaleString()}</span></div>
+      <div>${n.title}</div>
+      <div class="badge">${n.impact_tag || "GENERAL"}</div>
+    </a>
+  `).join('');
+}
+
+/* ======
+   Agent
+   ====== */
+let TTS_ENABLED = false;
+function speak(text) {
   try {
-    const res = await fetch(`${window.APP.SUPABASE_URL}/functions/v1/compute-scores`, {
+    if (!TTS_ENABLED || !("speechSynthesis" in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1; u.pitch = 1; u.volume = 1; u.lang = "en-US";
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  } catch {}
+}
+
+$id('btnTTS')?.addEventListener('click', () => {
+  TTS_ENABLED = !TTS_ENABLED;
+  $id('btnTTS').textContent = TTS_ENABLED ? "🔊 Speak: On" : "🔈 Speak: Off";
+  if (TTS_ENABLED) speak("Speech enabled.");
+});
+
+$id('btnAsk')?.addEventListener('click', async () => {
+  const msg = ($id('agentInput')?.value || '').trim();
+  if (!msg) return;
+  const thinking = "Thinking…";
+  if ($id('agentReply')) $id('agentReply').textContent = thinking;
+  speak(thinking);
+  try {
+    const r = await fetch(`${APP.FUNCS}/agent_router`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // anon is fine to call your function (RLS protects tables)
-        'apikey': window.APP.SUPABASE_ANON,
-        'Authorization': `Bearer ${window.APP.SUPABASE_ANON}`
-      },
-      // tweak season/week as you wish
-      body: JSON.stringify({ season: 2024, week: 1 })
+      headers: hdrs,
+      body: JSON.stringify({
+        message: msg,
+        sport: "nfl",
+        season: Number(seasonSel?.value || new Date().getFullYear()),
+        week: Number((weekSel?.value || 'Week 1').replace('Week ', '')) || 1,
+        task: "reason"
+      })
     });
-    const text = await res.text();
-    alert(`Compute finished: ${res.status} ${text}`);
+    const res = await r.json().catch(()=> ({}));
+    const reply = res.reply || res.message || res.text || "No reply.";
+    if ($id('agentReply')) $id('agentReply').textContent = reply;
+    speak(reply);
   } catch (e) {
-    alert('Compute failed: ' + (e?.message || e));
+    if ($id('agentReply')) $id('agentReply').textContent = 'Error contacting agent.';
   }
 });
-document.addEventListener("DOMContentLoaded", () => {
-  const buttons = document.querySelectorAll(".tabbtn");
-  const sections = document.querySelectorAll("section[id^='tab-']");
 
-  buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      // Hide all sections
-      sections.forEach(sec => sec.classList.add("hidden"));
-
-      // Remove active from all buttons
-      buttons.forEach(b => b.classList.remove("active"));
-
-      // Show the target section
-      const target = btn.getAttribute("data-tab");
-      document.getElementById(target).classList.remove("hidden");
-
-      // Mark this button as active
-      btn.classList.add("active");
-    });
-  });
-});
-// -------- Tabs: robust event delegation --------
-(function initTabs() {
-  const tabs = document.getElementById('tabs');
-  const sections = Array.from(document.querySelectorAll("section[id^='tab-']"));
-
-  if (!tabs || sections.length === 0) {
-    console.warn('Tabs init: missing #tabs or tab sections.');
-    return;
-  }
-
-  // Helper: show a target section id and mark active button
-  function showTab(targetId) {
-    // hide all sections
-    sections.forEach(s => s.classList.add('hidden'));
-
-    // show the requested section
-    const target = document.getElementById(targetId);
-    if (target) target.classList.remove('hidden');
-
-    // sync button active classes
-    Array.from(tabs.querySelectorAll('.tabbtn')).forEach(b => {
-      b.classList.toggle('active', b.getAttribute('data-tab') === targetId);
-    });
-  }
-
-  // Initial state: show the first button's target (or tab-draft)
-  const firstBtn = tabs.querySelector('.tabbtn') || tabs.querySelector('[data-tab="tab-draft"]');
-  const initial = firstBtn ? firstBtn.getAttribute('data-tab') : 'tab-draft';
-  showTab(initial);
-
-  // Delegate clicks from the nav
-  tabs.addEventListener('click', (e) => {
-    const btn = e.target.closest('.tabbtn');
-    if (!btn) return;
-    e.preventDefault();
-    const targetId = btn.getAttribute('data-tab');
-    if (targetId) showTab(targetId);
-  }, { passive: true });
-})();
-/* ---------- Tabs (bottom nav) ---------- */
-(function initTabs() {
-  const tabs = document.getElementById('tabs');
-  const sections = Array.from(document.querySelectorAll("section[id^='tab-']"));
-
-  if (!tabs || sections.length === 0) {
-    console.warn('Tabs init: missing #tabs or tab sections.');
-    return;
-  }
-
-  function showTab(targetId) {
-    // hide all sections
-    sections.forEach(s => s.classList.add('hidden'));
-    // show requested
-    const target = document.getElementById(targetId);
-    if (target) target.classList.remove('hidden');
-    // sync active button
-    Array.from(tabs.querySelectorAll('.tabbtn')).forEach(b => {
-      b.classList.toggle('active', b.getAttribute('data-tab') === targetId);
-    });
-  }
-
-  // initial
-  const firstBtn = tabs.querySelector('.tabbtn') || tabs.querySelector('[data-tab="tab-draft"]');
-  const initial = firstBtn ? firstBtn.getAttribute('data-tab') : 'tab-draft';
-  showTab(initial);
-
-  // delegate clicks
-  tabs.addEventListener('click', (e) => {
-    const btn = e.target.closest('.tabbtn');
-    if (!btn) return;
-    e.preventDefault();
-    const targetId = btn.getAttribute('data-tab');
-    if (targetId) showTab(targetId);
-  }, { passive: true });
-})();
-
-/* ---------- Remove leftover demo line ("Stefon Diggs Pts: 0.0") ---------- */
-document.addEventListener('DOMContentLoaded', () => {
+/* =================
+   Event wiring init
+   ================= */
+document.addEventListener('DOMContentLoaded', async () => {
+  // remove leftover demo line if present
   const demo = Array.from(document.querySelectorAll('*'))
     .find(n => n.childNodes && [...n.childNodes].some(c =>
       c.nodeType === 3 && /Stefon\s+Diggs[\s\S]*Pts:\s*0\.0/i.test(c.textContent || '')
     ));
   if (demo) demo.remove();
-});
 
-/* ---------- (optional) Service Worker registration (keep only one on the page) ---------- */
-// Prefer this in index.html, but if you want it here instead, uncomment:
-// if ('serviceWorker' in navigator) {
-//   navigator.serviceWorker.register('/sw.js', { scope: '/' })
-//     .then(r => console.log('SW registered', r.scope))
-//     .catch(err => console.warn('SW register failed', err));
-// }
-const _tabs = document.getElementById('tabs');
-if (_tabs) {
-  _tabs.addEventListener('click', (e) => {
-    const btn = e.target.closest('.tabbtn');
-    if (btn) console.log('Tab clicked:', btn.getAttribute('data-tab'));
-  }, { passive: true });
-} else {
-  console.warn('No #tabs element found.');
-}
-document.addEventListener('DOMContentLoaded', () => {
-  const tabs = Array.from(document.querySelectorAll('.tabbtn'));
-  const sections = {
-    draft:  document.getElementById('tab-draft'),
-    roster: document.getElementById('tab-roster'),
-    lineup: document.getElementById('tab-lineup'),
-    scores: document.getElementById('tab-scores'),
-    news:   document.getElementById('tab-news'),
-    agent:  document.getElementById('tab-agent'),
+  initDropdowns();
+  initTabs();
+
+  // Primary page loads
+  await loadDraft();
+  await loadRoster();
+  await loadScores();
+  await loadNews().catch(()=>{});
+
+  // Changes in season/week reload relevant data
+  seasonSel?.addEventListener('change', () => { loadDraft(); loadRoster(); loadScores(); });
+  weekSel?.addEventListener('change',   () => { loadDraft();                  loadScores(); });
+
+  // Add Source button
+  $id('btnAddSource')?.addEventListener('click', addSource);
+
+  // Compute buttons (support either id)
+  const compute = async () => {
+    try {
+      const res = await fetch(`${APP.SUPABASE_URL}/functions/v1/compute-scores`, {
+        method: 'POST',
+        headers: hdrs,
+        body: JSON.stringify({
+          season: Number(seasonSel?.value || new Date().getFullYear()),
+          week: Number((weekSel?.value || 'Week 1').replace('Week ','') || 1),
+          team_id: APP.TEAM_ID || 'demo-team-1'
+        })
+      });
+      const text = await res.text();
+      alert(`Compute finished: ${res.status} ${text}`);
+      await loadScores();
+    } catch (e) {
+      alert('Compute failed: ' + (e?.message || e));
+    }
   };
-
-  function showTab(name){
-    Object.entries(sections).forEach(([k,el]) => el && el.classList.toggle('hidden', k !== name));
-    tabs.forEach(b => b.classList.toggle('active', b.dataset.t === name));
-    localStorage.setItem('active_tab', name);
-  }
-
-  tabs.forEach(b => b.addEventListener('click', () => showTab(b.dataset.t)));
-  showTab(localStorage.getItem('active_tab') || 'draft');
-});
-document.addEventListener('DOMContentLoaded', () => {
-  const demo = Array.from(document.querySelectorAll('*'))
-    .find(n => n.childNodes && [...n.childNodes].some(c => c.nodeType === 3 && /Stefon Diggs/i.test(c.textContent)));
-  if (demo) demo.remove();
+  ['btnCompute','computeBtn'].forEach(id => $id(id)?.addEventListener('click', compute));
 });

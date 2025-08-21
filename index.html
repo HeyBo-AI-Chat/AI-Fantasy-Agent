@@ -8,298 +8,289 @@
   <meta name="theme-color" content="#0B132B" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <style>
-    :root { --bg:#0B132B; --fg:#fff; --muted:#94a3b8; --card:#111827; --accent:#22c55e; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial; background:var(--bg); color:var(--fg); }
-    .wrap { max-width:390px; margin:0 auto; padding:16px; }
-    .tabs { position:fixed; left:0; right:0; bottom:0; background:#111827; border-top:1px solid #1f2937; }
-    .tabs .row{ display:flex; max-width:390px; margin:0 auto; }
-    .tabbtn{ flex:1; padding:12px 4px; text-align:center; font-size:14px; color:#cbd5e1; border:none; background:transparent }
-    .tabbtn.active{ color:var(--accent); font-weight:600; }
-    .card{ background:#111827; border:1px solid #1f2937; border-radius:12px; padding:12px; margin-bottom:12px; }
-    .row { display:flex; gap:8px; align-items:center; }
-    .row.spread{ justify-content:space-between; }
-    .btn{ background:var(--accent); color:#052; border:none; border-radius:10px; padding:10px 12px; font-weight:600; }
-    .btn.muted{ background:#1f2937; color:#cbd5e1; }
-    .input, select, textarea { width:100%; background:#0f172a; color:#fff; border:1px solid #1f2937; border-radius:10px; padding:10px; }
-    textarea{ min-height:100px; }
-    .hide { display:none; }
-    .badge { font-size:12px; color:#94a3b8 }
-    a.card { display:block; color:inherit; text-decoration:none; }
-/* Utility */
-.hidden { display: none !important; }
-.active { opacity: 1; }
+    /* VARIABLES & RESET */
+    :root {
+      --bg: #0B132B;
+      --fg: #fff;
+      --muted: #94a3b8;
+      --card: #111827;
+      --border: #1f2937;
+      --accent: #22c55e;
+      --accent-dark: #052e16; /* Darker color for text on accent bg */
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      overflow-x: hidden;
+    }
+    body {
+      margin: 0;
+      padding-bottom: 84px; /* Space for sticky nav */
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    
+    /* LAYOUT & WRAPPER */
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 16px;
+    }
 
-/* Page container */
-.container, main, body {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 0 12px;
-  box-sizing: border-box;
-}
+    /* TYPOGRAPHY & HELPERS */
+    h2, h3 {
+      margin: 0 0 12px 0;
+      font-weight: 600;
+    }
+    .badge {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .hidden {
+      display: none !important;
+    }
 
-/* Make inputs/buttons full-width by default on phones */
-input[type="text"],
-input[type="number"],
-input[type="file"],
-select,
-textarea,
-button {
-  width: 100%;
-  box-sizing: border-box;
-}
+    /* COMPONENTS */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    a.card {
+      display: block;
+      color: inherit;
+      text-decoration: none;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .row.spread {
+      justify-content: space-between;
+    }
+    .row:last-child {
+      margin-bottom: 0;
+    }
 
-/* Two-up controls collapse to one column on small screens */
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-@media (max-width: 480px) {
-  .grid-2 {
-    grid-template-columns: 1fr;
-  }
-}
+    /* FORMS & INPUTS */
+    .input, input[type="text"], input[type="file"], input[type="number"], select, textarea {
+      width: 100%;
+      background: #0f172a;
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 1rem;
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .btn {
+      width: auto; /* Buttons don't need to be full-width by default */
+      background: var(--accent);
+      color: var(--accent-dark);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn.muted {
+      background: var(--border);
+      color: var(--muted);
+    }
+    .btn.full-width {
+      width: 100%;
+    }
 
-/* Cards/sections */
-.section {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 10px;
-  padding: 12px;
-  margin: 14px 0;
-}
-
-/* Bottom nav stays visible but doesn’t overlap content */
-#tabs {
-  position: sticky;
-  bottom: 0;
-  background: #0e1726;
-  padding: 8px 6px;
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-}
-#tabs .tabbtn {
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06);
-  padding: 8px 6px;
-  border-radius: 8px;
-  font-size: 12px;
-}
-#tabs .tabbtn.active {
-  background: #1fb868;
-  color: #0e1726;
-  border-color: #1fb868;
-}
-<section id="tab-draft"></section>
-<section id="tab-roster" class="hidden"></section>
-<section id="tab-lineup" class="hidden"></section>
-<section id="tab-scores" class="hidden"></section>
-<section id="tab-news"   class="hidden"></section>
-<section id="tab-agent"  class="hidden"></section>
-/* content wrapper: fill small screens nicely */
-.wrap { max-width: 600px; width: 100%; margin: 0 auto; padding: 16px; }
-
-/* fixed bottom tabs with safe-area padding */
-.tabs { position: fixed; left: 0; right: 0; bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
-
-/* leave space so content isn't hidden behind tabs */
-body { padding-bottom: 84px; } /* adjust to your .tabs height */
-    /* Kill any accidental horizontal scroll */
-html, body { overflow-x: hidden; }
+    /* STICKY BOTTOM NAVIGATION */
+    #tabs {
+      position: sticky;
+      bottom: 0;
+      background: #0e1726;
+      padding: 8px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom)); /* iOS safe area */
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      border-top: 1px solid var(--border);
+    }
+    .tabbtn {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      padding: 8px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tabbtn.active {
+      background: var(--accent);
+      color: var(--accent-dark);
+      border-color: var(--accent);
+    }
+    
+    /* Player specific styles */
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .player-row:last-child {
+      border-bottom: none;
+    }
   </style>
 </head>
 <body>
-<div class="wrap">
-  <h2 style="margin:0 0 8px 0;">AI Fantasy Agent</h2>
 
-  <div id="profile">
-  <h3>Your Profile</h3>
-  <input type="file" id="uploadProfile" accept="image/*" />
-  <img id="profilePreview" src="" alt="Profile Picture" />
-</div>
- <div id="addTeam">
-  <h3>Add Fantasy Team</h3>
-  <input id="platform" placeholder="Platform (ESPN, DraftKings...)" />
-  <input id="leagueId" placeholder="League ID" />
-  <input id="teamName" placeholder="Team Name" />
-  <button id="saveTeam">Save</button>
-</div> 
- <div class="card">
-  <b>Team Profile</b>
-  <input type="file" id="avatarFile" accept="image/*" />
-  <img id="avatarPreview" style="max-width:120px;border-radius:8px;margin-top:8px"/>
-</div>
+<main class="wrap">
+  <h2>AI Fantasy Agent</h2>
+
   <!-- season/week controls + compute -->
-  <div class="row" style="gap:8px; margin-bottom:12px;">
+  <div class="row">
     <select id="season"></select>
     <select id="week"></select>
     <button id="btnCompute" class="btn">Compute</button>
   </div>
 
+  <!-- LINK EXTERNAL PLATFORM FORM -->
+  <div class="card">
+    <h3>Link External Platform</h3>
+    <div class="row">
+      <select id="srcPlatform">
+        <option value="" disabled selected>Select Platform</option>
+        <option value="DraftKings">DraftKings</option>
+        <option value="FanDuel">FanDuel</option>
+        <option value="Yahoo">Yahoo</option>
+        <option value="ESPN">ESPN</option>
+        <option value="Sleeper">Sleeper</option>
+        <option value="Other">Other</option>
+      </select>
+      <input id="srcHandle" placeholder="Username / League ID" />
+    </div>
+    <div class="row">
+      <textarea id="srcNotes" placeholder="Notes (optional)"></textarea>
+    </div>
+    <div class="row spread">
+      <span id="srcStatus" class="badge"></span>
+      <button id="btnAddSource" class="btn">Add Source</button>
+    </div>
+  </div>
+
+  <!-- LIST OF SAVED SOURCES -->
+  <div class="card">
+    <h3>Linked Sources</h3>
+    <div id="sourcesList">
+      <!-- Sources will be dynamically added here -->
+    </div>
+    <button id="btnReloadSources" class="btn muted">Reload</button>
+  </div>
+
+  <!-- ========= TAB PANELS ========= -->
+
   <!-- DRAFT -->
   <section id="tab-draft">
-    <div class="row spread" style="margin:8px 0;">
-      <b>Draft</b><span id="draftCount" class="badge">0</span>
-    </div>
-    <div id="draftList"></div>
- button class="tabbtn active" data-t="draft">Draft</button>
-  </section>
-<!-- External platforms mini form -->
-<div class="card" style="margin-top:12px">
-  <b>Link External Platform</b>
-  <div class="row" style="gap:8px; margin-top:8px">
-    <select id="srcPlatform" style="flex:1">
-      <option value="DraftKings">DraftKings</option>
-      <option value="FanDuel">FanDuel</option>
-      <option value="Yahoo">Yahoo</option>
-      <option value="ESPN">ESPN</option>
-      <option value="Sleeper">Sleeper</option>
-      <option value="Other">Other</option>
-    </select>
-    <input id="srcHandle" placeholder="Username / League ID" style="flex:1" />
-  </div>
-  <input id="srcNotes" placeholder="Notes (optional)" style="margin-top:8px; width:100%" />
-  <div class="row spread" style="margin-top:8px">
-    <button id="btnAddSource" class="btn">Add</button>
-    <span id="srcStatus" class="badge"></span>
-  </div>
-</div>
-
-<!-- List of saved sources -->
-<div class="card" style="margin-top:8px">
-  <b>Linked Sources</b>
-  <div id="sourcesList" style="margin-top:8px"></div>
-</div>
-  <!-- ROSTER -->
-  <section id="tab-roster" class="hide">
-    <div class="row spread" style="margin:8px 0;">
-      <b>Roster</b><span id="rosterCount" class="badge">0</span>
-    </div>
-    <div id="rosterList"></div>
- <div class="player-row" data-player-id="PLAYER123">
-  
-</div>
-button>
-  <button class="tabbtn" data-t="roster">Roster</button>
-  </section>
-<div class="card" style="margin-top:12px">
-  <b>Add External Platform</b>
-  <div class="row" style="gap:8px; margin-top:8px">
-    <input id="srcPlatform" placeholder="Platform (DraftKings, Yahoo...)" />
-    <input id="srcHandle"   placeholder="Handle / League ID / URL slug" />
-  </div>
-  <textarea id="srcNotes" placeholder="Notes (optional)"></textarea>
-  <div class="row" style="gap:8px; margin-top:8px">
-    <button class="btn" id="btnAddSource">Save</button>
-    <button class="btn muted" id="btnReloadSources">Reload</button>
-  </div>
-  <div class="card">
-  <b>Link external platform</b>
-  <div class="row" style="gap:8px; margin-top:8px">
-    <input id="srcPlatform" placeholder="Platform (e.g., DraftKings)" />
-    <input id="srcHandle"   placeholder="Handle / League ID" />
-    <input id="srcNotes"    placeholder="Notes (optional)" />
-    <button id="btnAddSource" class="btn">Save</button>
-  </div>
-</div>
-
-<div id="sourcesList" class="card"></div>
-  <div id="sourcesList" style="margin-top:8px"></div>
-</div>
-  <!-- LINEUP -->
-  <section id="tab-lineup" class="hide">
-    <div class="row spread" style="margin:8px 0;">
-      <b>Lineup</b>
-      <button id="btnSaveLineup" class="btn">Save lineup</button>
-    </div>
-    <div class="card">
-      <b>Starters</b>
-      <div id="starters"></div>
-    <div class="player-row" data-player-id="PLAYER123">
-  <div>Stefon Diggs</div>
-  <div>Pts: <span class="pts">0.0</span></div>
-</div>
-    </div>
-    <div class="card">
-      <b>Bench</b>
-      <div id="bench"></div>
-   <div class="player-row" data-player-id="PLAYER123">
-  <div>Stefon Diggs</div>
-  <div>Pts: <span class="pts">0.0</span></div>
-</div>
-    </div>
-<button class="tabbtn" data-t="lineup">Lineup</button>
-  </section>
-
-  <!-- SCORES -->
-  <!-- SCORES -->
-<section id="tab-scores" class="hide">
-  <div class="row spread" style="margin:8px 0">
-    <b>Scores</b>
-    <span id="scoresUpdated" class="badge" style="opacity:.7">—</span>
-  </div>
-
-  <div class="card">
     <div class="row spread">
-      <div><b>Team total</b></div>
-      <div id="teamTotal">0.0</div>
+      <h3>Draft</h3>
+      <span id="draftCount" class="badge">0 players</span>
     </div>
-  </div>
+    <div id="draftList" class="card">
+      <!-- Draft list will be dynamically added here -->
+    </div>
+  </section>
 
-  <div id="scoresList"></div>
-<button class="tabbtn" data-t="scores">Scores</button>
-</section>
- <div class="player-row" data-player-id="PLAYER123">
-  <div>Stefon Diggs</div>
-  <div>Pts: <span class="pts">0.0</span></div>
-</div>
+  <!-- ROSTER -->
+  <section id="tab-roster" class="hidden">
+    <div class="row spread">
+      <h3>Roster</h3>
+      <span id="rosterCount" class="badge">0 players</span>
+    </div>
+    <div id="rosterList" class="card">
+        <!-- Roster list will be dynamically added here -->
+    </div>
+  </section>
+
+  <!-- LINEUP -->
+  <section id="tab-lineup" class="hidden">
+    <div class="row spread">
+      <h3>Lineup</h3>
+      <button id="btnSaveLineup" class="btn">Save Lineup</button>
+    </div>
+    <div class="card">
+      <h4>Starters</h4>
+      <div id="starters">
+        <!-- Starters will be dynamically added here -->
+      </div>
+    </div>
+    <div class="card">
+      <h4>Bench</h4>
+      <div id="bench">
+        <!-- Bench players will be dynamically added here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- SCORES -->
+  <section id="tab-scores" class="hidden">
+    <div class="row spread">
+      <h3>Scores</h3>
+      <span id="scoresUpdated" class="badge">—</span>
+    </div>
+    <div class="card">
+      <div class="row spread">
+        <b>Team total</b>
+        <b id="teamTotal">0.0</b>
+      </div>
+    </div>
+    <div id="scoresList">
+      <!-- Scores will be dynamically added here -->
+    </div>
   </section>
 
   <!-- NEWS -->
-  <section id="tab-news" class="hide">
-    <div class="row spread" style="margin:8px 0;">
-      <b>News & Injuries</b>
+  <section id="tab-news" class="hidden">
+    <div class="row spread">
+      <h3>News & Injuries</h3>
       <button id="btnRefreshNews" class="btn muted">Refresh</button>
     </div>
-    <div id="newsList"></div>
-<button class="tabbtn" data-t="news">News</button>
+    <div id="newsList" class="card">
+      <!-- News items will be dynamically added here -->
+    </div>
   </section>
 
-  <!-- AGENT (voice in/out) -->
-  <section id="tab-agent" class="hide">
-    <div class="row spread" style="margin:8px 0;">
-      <b>Agent</b>
-      <div class="row" style="gap:8px;">
+  <!-- AGENT -->
+  <section id="tab-agent" class="hidden">
+    <div class="row spread">
+      <h3>Agent</h3>
+      <div class="row">
         <button id="btnTTS" class="btn muted" title="Toggle speech output">🔈 Speak: Off</button>
         <button id="btnMic" class="btn" title="Hold to talk">🎤 Hold</button>
       </div>
     </div>
-
-    <div class="card" style="margin-bottom:8px;">
+    <textarea id="agentInput" class="input" placeholder="Ask Agent… e.g. Start/Sit for Week 3"></textarea>
+    <div class="card">
       <div id="voiceStatus" class="badge">Mic idle</div>
     </div>
-
-    <textarea id="agentInput" class="input" placeholder="Ask Agent… e.g. Start/Sit for Week 3"></textarea>
-    <div class="row" style="gap:8px; margin:8px 0;">
-      <button class="tabbtn" data-t="agent">Agent</button>
+    <div id="agentReply" class="card">
+      <!-- Agent's reply will appear here -->
     </div>
-    <div id="agentReply" class="card"></div>
   </section>
 
-  <div style="height:80px"></div>
-</div>
+</main>
 
-<!-- bottom nav -->
-
-<section id="tab-draft"></section>
-<section id="tab-roster" class="hidden"></section>
-<section id="tab-lineup" class="hidden"></section>
-<section id="tab-scores" class="hidden"></section>
-<section id="tab-news"   class="hidden"></section>
-<section id="tab-agent"  class="hidden"></section>
-  <nav id="tabs">
+<!-- BOTTOM NAVIGATION -->
+<nav id="tabs">
   <button type="button" class="tabbtn active" data-t="draft">Draft</button>
   <button type="button" class="tabbtn" data-t="roster">Roster</button>
   <button type="button" class="tabbtn" data-t="lineup">Lineup</button>
@@ -307,21 +298,26 @@ button>
   <button type="button" class="tabbtn" data-t="news">News</button>
   <button type="button" class="tabbtn" data-t="agent">Agent</button>
 </nav>
+
+<!-- SCRIPTS -->
 <script src="./config.js" defer></script>
 <script src="./app.js" defer></script>
 <script>
+  // Initialize Service Worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
-      .then(r => console.log('SW registered', r.scope))
-      .catch(err => console.warn('SW register failed', err));
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/' })
+        .then(r => console.log('Service Worker registered with scope:', r.scope))
+        .catch(err => console.warn('Service Worker registration failed:', err));
+    });
   }
+
+  // Remove any leftover demo/placeholder player rows if needed
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.player-row-demo').forEach(el => el.remove());
+  });
 </script>
+
 </body>
 </html>
-// Remove any leftover demo points line if present
-document.addEventListener('DOMContentLoaded', () => {
-  const demo = Array.from(document.querySelectorAll('*'))
-    .find(n => n.childNodes && [...n.childNodes].some(c => c.nodeType === 3 && /Stefon Diggs/i.test(c.textContent)));
-  if (demo) demo.remove();
-});

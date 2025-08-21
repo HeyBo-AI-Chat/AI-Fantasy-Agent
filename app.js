@@ -332,27 +332,6 @@ $id('btnAsk')?.addEventListener('click', async () => {
     if ($id('agentReply')) $id('agentReply').textContent = 'Error contacting agent.';
   }
 });
-// ========================
-// Button wiring functions
-// ========================
-
-function wireAddSource() {
-  const btn = document.getElementById('btnAddSource');
-  if (!btn) return;
-  btn.addEventListener('click', async (ev) => {
-    ev.preventDefault();
-    // … same code from B) …
-  });
-}
-
-function wireCompute() {
-  const btn = document.getElementById('btnCompute') || document.getElementById('computeBtn');
-  if (!btn) return;
-  btn.addEventListener('click', async (ev) => {
-    ev.preventDefault();
-    // … same code from B) …
-  });
-}
 /* =================
    Event wiring init
    ================= */

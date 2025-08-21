@@ -999,3 +999,12 @@ document.addEventListener('DOMContentLoaded', () => {
 //     .then(r => console.log('SW registered', r.scope))
 //     .catch(err => console.warn('SW register failed', err));
 // }
+const _tabs = document.getElementById('tabs');
+if (_tabs) {
+  _tabs.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tabbtn');
+    if (btn) console.log('Tab clicked:', btn.getAttribute('data-tab'));
+  }, { passive: true });
+} else {
+  console.warn('No #tabs element found.');
+}

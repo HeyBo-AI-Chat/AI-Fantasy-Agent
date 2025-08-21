@@ -85,6 +85,14 @@ $(".tabbtn").forEach(b => {
     );
   };
 }); 
+// -------- Remove leftover demo points line, if present --------
+document.addEventListener('DOMContentLoaded', () => {
+  const demo = Array.from(document.querySelectorAll('*'))
+    .find(n => n.childNodes && [...n.childNodes].some(c =>
+      c.nodeType === 3 && /Stefon\s+Diggs\s*[\s\S]*Pts:\s*0\.0/i.test(c.textContent || '')
+    ));
+  if (demo) demo.remove();
+});
 if (t === 'roster') {
   async function saveSource() {
   const platform = document.getElementById('srcPlatform')?.value?.trim();

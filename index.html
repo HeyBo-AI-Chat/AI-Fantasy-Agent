@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     news:   document.getElementById('tab-news'),
     agent:  document.getElementById('tab-agent'),
   };
+<script src="/app.js?v=2"></script>
   function showTab(name){
     Object.entries(sections).forEach(([k,el]) => el && el.classList.toggle('hidden', k !== name));
     tabs.forEach(b => b.classList.toggle('active', b.dataset.t === name));

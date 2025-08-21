@@ -285,7 +285,45 @@ async function loadNews() {
     </a>
   `).join('');
 }
+async function computeNow() {
+  const season = Number(seasonSel?.value || new Date().getFullYear());
+  const week   = Number((weekSel?.value || 'Week 1').replace('Week ', '')) || 1;
 
+  const functionsBase =
+    (window.APP && window.APP.FUNCS) ||
+    (APP?.SUPABASE_URL ? `${APP.SUPABASE_URL}/functions/v1` : '');
+
+  if (!functionsBase) {
+    alert('Compute failed: Functions base URL missing.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${functionsBase}/compute-scores`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': APP.SUPABASE_ANON,
+        'Authorization': `Bearer ${APP.SUPABASE_ANON}`
+      },
+      body: JSON.stringify({
+        team_id: APP.TEAM_ID || 'demo-team-1',
+        season,
+        week
+      })
+    });
+
+    const text = await res.text();
+    if (!res.ok) {
+      alert(`Compute failed: ${text || res.status}`);
+      return;
+    }
+    alert(`Compute finished: ${text || res.status}`);
+    await loadScores();
+  } catch (e) {
+    alert('Compute failed: ' + (e?.message || e));
+  }
+}
 /* ======
    Agent
    ====== */

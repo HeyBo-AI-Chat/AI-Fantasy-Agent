@@ -462,3 +462,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
   ['btnCompute','computeBtn'].forEach(id => $id(id)?.addEventListener('click', compute));
 });
+// Ensure buttons are wired even if markup changes
+bindButtons();
+document.getElementById('tabs')?.addEventListener('click', () => {
+  setTimeout(bindButtons, 0);
+});

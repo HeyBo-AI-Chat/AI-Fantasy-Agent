@@ -2,24 +2,12 @@
    Config & Supabase client
    ========================= */
 const APP = window.APP || {};
-// When loaded via <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-// the global is window.supabase.createClient(...)
-const supaCreate = (window.supabase && window.supabase.createClient) || window.createClient;
-if (!supaCreate) console.warn('Supabase library not found. Make sure you include supabase-js on the page.');
+const supaCreate =
+  (window.supabase && window.supabase.createClient) || window.createClient;
+if (!supaCreate) console.warn('Supabase library not found. Include supabase-js.');
+const supabase =
+  (window._supabaseClient ||= supaCreate?.(APP.SUPABASE_URL, APP.SUPABASE_ANON));
 
-const supabase = (window._supabaseClient ||= supaCreate?.(APP.SUPABASE_URL, APP.SUPABASE_ANON));
-// Returns { type: 'regular'|'playoff', value: number|string }
-// - regular: value = 1..18
-// - playoff: value = 'WC' | 'DIV' | 'CONF' | 'SB'
-function getSelectedWeek() {
-  const raw = (weekSel?.value || '').trim();
-  const n = Number(raw);
-  if (!raw) return { type: 'regular', value: 1 };      // default to Week 1 if empty
-  if (!Number.isNaN(n) && n >= 1 && n <= 18) {
-    return { type: 'regular', value: n };
-  }
-  return { type: 'playoff', value: raw };              // WC, DIV, CONF, SB
-}
 /* ==============
    Small helpers
    ============== */
@@ -31,13 +19,6 @@ const hdrs = {
   'apikey': APP.SUPABASE_ANON,
   'Authorization': `Bearer ${APP.SUPABASE_ANON}`
 };
-
-function fillSelect(sel, items, placeholder = 'Select…') {
-  if (!sel) return;
-  sel.innerHTML =
-    `<option value="">${placeholder}</option>` +
-    items.map(v => `<option value="${v}">${v}</option>`).join('');
-}
 
 /* =========================
    Dev-only user id (no Auth)
@@ -54,37 +35,52 @@ async function getUserId() {
   return id;
 }
 
-/* =========================
-   Dropdown data & population
-   =========================
+/* =======================================
+   Dropdown data & population (fixed)
+   ======================================= */
+let seasonSel, weekSel;
+
+function fillSelect(sel, items, placeholder = 'Select…') {
+  if (!sel) return;
+  sel.innerHTML =
+    `<option value="">${placeholder}</option>` +
+    items.map(v => `<option value="${v}">${v}</option>`).join('');
+}
+
+// Returns { type: 'regular'|'playoff', value: number|string }
+function getSelectedWeek() {
+  const raw = (weekSel?.value || '').trim();
+  const n = Number(raw);
+  if (!raw) return { type: 'regular', value: 1 };
+  if (!Number.isNaN(n) && n >= 1 && n <= 18) return { type: 'regular', value: n };
+  return { type: 'playoff', value: raw }; // 'WC' | 'DIV' | 'CONF' | 'SB'
+}
+
 function initDropdowns() {
   seasonSel = $id('season');
   weekSel   = $id('week');
 
-  // Seasons (keep exactly 2020–2024 as requested)
+  // Seasons (exactly 2020–2024)
   fillSelect(seasonSel, [2024, 2023, 2022, 2021, 2020], 'Select Season');
 
-  // Build Week select with Regular Season + Playoffs
+  // Week / Round (Regular + Playoffs)
   if (weekSel) {
-    weekSel.innerHTML = ''; // clear
+    weekSel.innerHTML = '';
+    const ph = document.createElement('option');
+    ph.value = '';
+    ph.textContent = 'Select Week / Round';
+    weekSel.appendChild(ph);
 
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Select Week / Round';
-    weekSel.appendChild(placeholder);
-
-    // Regular Season (1..18)
     const ogReg = document.createElement('optgroup');
     ogReg.label = 'Regular Season';
     for (let w = 1; w <= 18; w++) {
       const opt = document.createElement('option');
-      opt.value = String(w);         // numeric weeks
+      opt.value = String(w);
       opt.textContent = `Week ${w}`;
       ogReg.appendChild(opt);
     }
     weekSel.appendChild(ogReg);
 
-    // Playoffs
     const ogPO = document.createElement('optgroup');
     ogPO.label = 'Playoffs';
     [
@@ -94,16 +90,19 @@ function initDropdowns() {
       { value: 'SB',  label: 'Super Bowl' },
     ].forEach(({value, label}) => {
       const opt = document.createElement('option');
-      opt.value = value;             // non-numeric stages
+      opt.value = value;
       opt.textContent = label;
       ogPO.appendChild(opt);
     });
     weekSel.appendChild(ogPO);
   }
 
-  // Platforms
-  fillSelect($id('srcPlatform'), ['DraftKings','FanDuel','Yahoo','ESPN','Sleeper','Other'], 'Select Platform');
+  fillSelect($id('srcPlatform'),
+    ['DraftKings','FanDuel','Yahoo','ESPN','Sleeper','Other'],
+    'Select Platform'
+  );
 }
+
 /* =========
    Tabs init
    ========= */
@@ -165,7 +164,6 @@ async function loadSources() {
     </div>
   `).join('');
 
-  // wire deletes
   list.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-del');
@@ -213,7 +211,16 @@ async function getJSON(url) {
 
 async function loadDraft() {
   const season = Number(seasonSel?.value || new Date().getFullYear());
-  const week   = Number((weekSel?.value || 'Week 1').replace('Week ','') || 1);
+  const wk = getSelectedWeek();
+  if (wk.type !== 'regular') {
+    // No weekly_stats for playoff rounds; clear list politely
+    const list = $id('draftList');
+    const count = $id('draftCount');
+    if (list) list.innerHTML = `<div class="badge">Draft list not available for playoff rounds.</div>`;
+    if (count) count.textContent = '0';
+    return;
+  }
+  const week = wk.value;
 
   const url = `${APP.SUPABASE_URL}/rest/v1/weekly_stats?` + qs({
     select: "player_id,position,team_id,season,week,fantasy_ppr,players(player_name)",
@@ -245,7 +252,6 @@ async function loadDraft() {
     </div>
   `).join('');
 
-  // optional: wire "Add" buttons if you use a roster table
   $$('#draftList [data-add]').forEach(btn => {
     btn.addEventListener('click', async () => {
       alert('Add-to-roster not wired to a table yet.');
@@ -254,7 +260,6 @@ async function loadDraft() {
 }
 
 async function loadRoster() {
-  // Wire to your own view/table if you have it; otherwise noop
   const list = $id('rosterList');
   const count = $id('rosterCount');
   if (list) list.innerHTML = '';
@@ -276,14 +281,15 @@ function renderLineup() {
    ======= */
 async function loadScores() {
   const season = Number(seasonSel?.value || new Date().getFullYear());
-  const week   = Number((weekSel?.value || 'Week 1').replace('Week ','') || 1);
-
-  const url = `${APP.SUPABASE_URL}/rest/v1/team_week_scores?` + qs({
+  const wk = getSelectedWeek();
+  const params = {
     select: "team_id,season,week,points,breakdown",
-    season: "eq:" + season,
-    week:   "eq:" + week
-  });
+    season: "eq:" + season
+  };
+  if (wk.type === 'regular') params.week = "eq:" + wk.value;
+  // (If playoffs, your RPC/edge function can read a "round" later)
 
+  const url = `${APP.SUPABASE_URL}/rest/v1/team_week_scores?` + qs(params);
   const data = await getJSON(url).catch(()=>[]);
   const list = $id('scoresList');
   if (!list) return;
@@ -302,7 +308,6 @@ async function loadScores() {
 }
 
 async function refreshTeamPoints() {
-  // Simple placeholder: reuse loadScores to refresh UI
   await loadScores();
 }
 
@@ -326,24 +331,25 @@ async function loadNews() {
     </a>
   `).join('');
 }
+
+/* ==============
+   Compute (fixed)
+   ============== */
 async function computeNow() {
   const season = Number(seasonSel?.value || new Date().getFullYear());
-  const wk     = getSelectedWeek();
+  const wk = getSelectedWeek();
   const payload = {
     team_id: APP.TEAM_ID || 'demo-team-1',
     season,
     week:  wk.type === 'regular' ? wk.value : null,
-    round: wk.type === 'playoff' ? wk.value : null  // new
+    round: wk.type === 'playoff' ? wk.value : null
   };
 
   const functionsBase =
     (window.APP && window.APP.FUNCS) ||
     (APP?.SUPABASE_URL ? `${APP.SUPABASE_URL}/functions/v1` : '');
 
-  if (!functionsBase) {
-    alert('Compute failed: Functions base URL missing.');
-    return;
-  }
+  if (!functionsBase) return alert('Compute failed: Functions base URL missing.');
 
   try {
     const res = await fetch(`${functionsBase}/compute-scores`, {
@@ -364,32 +370,6 @@ async function computeNow() {
   }
 }
 
-  try {
-    const res = await fetch(`${functionsBase}/compute-scores`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': APP.SUPABASE_ANON,
-        'Authorization': `Bearer ${APP.SUPABASE_ANON}`
-      },
-      body: JSON.stringify({
-        team_id: APP.TEAM_ID || 'demo-team-1',
-        season,
-        week
-      })
-    });
-
-    const text = await res.text();
-    if (!res.ok) {
-      alert(`Compute failed: ${text || res.status}`);
-      return;
-    }
-    alert(`Compute finished: ${text || res.status}`);
-    await loadScores();
-  } catch (e) {
-    alert('Compute failed: ' + (e?.message || e));
-  }
-}
 /* ======
    Agent
    ====== */
@@ -417,6 +397,7 @@ $id('btnAsk')?.addEventListener('click', async () => {
   if ($id('agentReply')) $id('agentReply').textContent = thinking;
   speak(thinking);
   try {
+    const wk = getSelectedWeek();
     const r = await fetch(`${APP.FUNCS}/agent_router`, {
       method: 'POST',
       headers: hdrs,
@@ -424,7 +405,8 @@ $id('btnAsk')?.addEventListener('click', async () => {
         message: msg,
         sport: "nfl",
         season: Number(seasonSel?.value || new Date().getFullYear()),
-        week: Number((weekSel?.value || 'Week 1').replace('Week ', '')) || 1,
+        week: wk.type === 'regular' ? wk.value : null,
+        round: wk.type === 'playoff' ? wk.value : null,
         task: "reason"
       })
     });
@@ -432,16 +414,15 @@ $id('btnAsk')?.addEventListener('click', async () => {
     const reply = res.reply || res.message || res.text || "No reply.";
     if ($id('agentReply')) $id('agentReply').textContent = reply;
     speak(reply);
-  } catch (e) {
+  } catch {
     if ($id('agentReply')) $id('agentReply').textContent = 'Error contacting agent.';
   }
 });
+
 /* =================
-   Event wiring init
+   Button wiring
    ================= */
-// --- Robust button wiring (id-agnostic) ---
 function bindButtons() {
-  // Try multiple ids so HTML/JS can mismatch and still work
   const addBtns = [
     document.getElementById('btnAddSource'),
     document.getElementById('addSourceBtn'),
@@ -454,7 +435,6 @@ function bindButtons() {
     document.querySelector('[data-action="compute"]'),
   ].filter(Boolean);
 
-  // Avoid double-binding
   addBtns.forEach((btn) => {
     if (btn.__wired) return;
     btn.__wired = true;
@@ -476,15 +456,18 @@ function bindButtons() {
   });
 }
 
-// Fallback: delegate clicks if buttons are mounted later
 document.addEventListener('click', async (e) => {
   const add = e.target.closest('#btnAddSource, #addSourceBtn, [data-action="add-source"]');
   const comp = e.target.closest('#btnCompute, #computeBtn, [data-action="compute"]');
   if (add) { e.preventDefault(); await addSource(); }
   if (comp) { e.preventDefault(); await computeNow(); }
 });
+
+/* =================
+   Boot
+   ================= */
 document.addEventListener('DOMContentLoaded', async () => {
-  // remove leftover demo line if present
+  // Remove any leftover demo line
   const demo = Array.from(document.querySelectorAll('*'))
     .find(n => n.childNodes && [...n.childNodes].some(c =>
       c.nodeType === 3 && /Stefon\s+Diggs[\s\S]*Pts:\s*0\.0/i.test(c.textContent || '')
@@ -493,24 +476,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initDropdowns();
   initTabs();
+  bindButtons();
 
-  // Primary page loads
   await loadDraft();
   await loadRoster();
   await loadScores();
   await loadNews().catch(()=>{});
 
-   // Changes in season/week reload relevant data
   seasonSel?.addEventListener('change', () => { loadDraft(); loadRoster(); loadScores(); });
   weekSel?.addEventListener('change',   () => { loadDraft();                  loadScores(); });
-const channel = supabase
-  .channel('custom-all-channel')
-  .on(
-    'postgres_changes',
-    { event: '*', schema: 'public', table: 'fantasy_points' },
-    payload => {
-      console.log('New fantasy update:', payload);
-    }
-  )
-  .subscribe();
 
+  // Realtime subscription for fantasy_points
+  supabase
+    .channel('custom-all-channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'fantasy_points' },
+      payload => {
+        console.log('New fantasy update:', payload);
+        refreshTeamPoints().catch(()=>{});
+      }
+    )
+    .subscribe();
+});

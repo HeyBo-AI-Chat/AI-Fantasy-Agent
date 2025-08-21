@@ -20,6 +20,149 @@ async function getUserId() {
   return id;
 }
 
+    /* VARIABLES & RESET */
+    :root {
+      --bg: #0B132B;
+      --fg: #fff;
+      --muted: #94a3b8;
+      --card: #111827;
+      --border: #1f2937;
+      --accent: #22c55e;
+      --accent-dark: #052e16; /* Darker color for text on accent bg */
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      overflow-x: hidden;
+    }
+    body {
+      margin: 0;
+      padding-bottom: 84px; /* Space for sticky nav */
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    
+    /* LAYOUT & WRAPPER */
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* TYPOGRAPHY & HELPERS */
+    h2, h3 {
+      margin: 0 0 12px 0;
+      font-weight: 600;
+    }
+    .badge {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .hidden {
+      display: none !important;
+    }
+
+    /* COMPONENTS */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    a.card {
+      display: block;
+      color: inherit;
+      text-decoration: none;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .row.spread {
+      justify-content: space-between;
+    }
+    .row:last-child {
+      margin-bottom: 0;
+    }
+
+    /* FORMS & INPUTS */
+    .input, input[type="text"], input[type="file"], input[type="number"], select, textarea {
+      width: 100%;
+      background: #0f172a;
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 1rem;
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .btn {
+      width: auto; /* Buttons don't need to be full-width by default */
+      background: var(--accent);
+      color: var(--accent-dark);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn.muted {
+      background: var(--border);
+      color: var(--muted);
+    }
+    .btn.full-width {
+      width: 100%;
+    }
+
+    /* STICKY BOTTOM NAVIGATION */
+    #tabs {
+      position: sticky;
+      bottom: 0;
+      background: #0e1726;
+      padding: 8px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom)); /* iOS safe area */
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      border-top: 1px solid var(--border);
+    }
+    .tabbtn {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      padding: 8px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tabbtn.active {
+      background: var(--accent);
+      color: var(--accent-dark);
+      border-color: var(--accent);
+    }
+    
+    /* Player specific styles */
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .player-row:last-child {
+      border-bottom: none;
+    }
+  
   // Dev mode fallback: keep a stable anonymous uuid in localStorage
   let id = localStorage.getItem('dev_user_id');
   if (!id) {

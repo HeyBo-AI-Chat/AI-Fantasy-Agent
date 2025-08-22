@@ -5,7 +5,7 @@ window.APP = {
 
   // the Edge Functions base (no trailing slash)
   FUNCS: "https://dcsxzyglwddqvqnuukzj.functions.supabase.co",
-  OPENROUTER_KEY: "",
+  OPENROUTER_KEY: "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",
   // defaults shown in the UI (use any season/week you want)
   LEAGUE_ID: "demo-league-1",
   TEAM_ID: "demo-team-1",

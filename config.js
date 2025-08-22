@@ -15,3 +15,7 @@ window.APP = {
   // voice (optional; can stay empty until you add)
   OPENROUTER_PROVIDER: "openrouter", // keep
 };
+ raise notice 'LEAGUE_ID=%', v_league;
+  raise notice 'TEAM_ID=%',   v_team;
+  if v_owner is not null then
+    raise notice 'DEV_OWNER_ID(used for leagues.owner_id)=%', v_owner;

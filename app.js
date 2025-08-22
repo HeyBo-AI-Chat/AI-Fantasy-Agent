@@ -333,26 +333,30 @@ async function loadNews() {
 }
 
 /* ==============
-   Compute (fixed)
+   Compute (improved)
    ============== */
 async function computeNow() {
-  const season = Number(seasonSel?.value || new Date().getFullYear());
+  const season = Number(seasonSel?.value) || (APP.SEASON_DEFAULT || new Date().getFullYear());
   const wk = getSelectedWeek();
   const payload = {
     team_id: APP.TEAM_ID || 'demo-team-1',
     season,
     week:  wk.type === 'regular' ? wk.value : null,
-    round: wk.type === 'playoff' ? wk.value : null
+    round: wk.type === 'playoff' ? wk.value : null,
   };
 
   const functionsBase =
-    (window.APP && window.APP.FUNCS) ||
+    (APP && APP.FUNCS) ||
     (APP?.SUPABASE_URL ? `${APP.SUPABASE_URL}/functions/v1` : '');
 
-  if (!functionsBase) return alert('Compute failed: Functions base URL missing.');
+  if (!functionsBase) {
+    alert('Compute failed: Functions base URL missing (APP.FUNCS).');
+    return;
+  }
 
   try {
-    const res = await fetch(`${functionsBase}/compute-scores`, {
+    const url = `${functionsBase}/compute-scores`;
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -361,15 +365,21 @@ async function computeNow() {
       },
       body: JSON.stringify(payload)
     });
-    const text = await res.text();
-    if (!res.ok) return alert(`Compute failed: ${text || res.status}`);
+
+    const text = await res.text(); // show server message verbatim
+    if (!res.ok) {
+      console.error('compute-scores error', res.status, text);
+      alert(`Compute failed: ${res.status} ${text || '(no body)'}`);
+      return;
+    }
+
     alert(`Compute finished: ${text || res.status}`);
     await loadScores();
   } catch (e) {
+    console.error('compute-scores fetch threw', e);
     alert('Compute failed: ' + (e?.message || e));
   }
 }
-
 /* ======
    Agent
    ====== */

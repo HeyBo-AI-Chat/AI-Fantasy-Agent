@@ -177,17 +177,17 @@ async function loadSources() {
   `).join('');
 
   list.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.getAttribute('data-del');
-      const { error: delErr } = await supabase.from('team_sources').delete().eq('id', id);
-      if (delErr) {
-        alert('Delete failed: ' + delErr.message);
-      } else {
-        loadSources();
-      }
-    });
+  btn.addEventListener('click', async () => {
+    const id = btn.getAttribute('data-del');
+    // console.log('deleting team_source id:', id);
+    const { error: delErr } = await supabase
+      .from('team_sources')
+      .delete()
+      .eq('id', id);
+    if (delErr) alert('Delete failed: ' + delErr.message);
+    else loadSources();
   });
-}
+});
 
 async function addSource() {
   const platform = ($id('srcPlatform')?.value || '').trim();

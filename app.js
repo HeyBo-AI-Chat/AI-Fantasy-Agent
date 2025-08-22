@@ -187,7 +187,6 @@ async function loadSources() {
     if (delErr) alert('Delete failed: ' + delErr.message);
     else loadSources();
   });
-});
 
 async function addSource() {
   const platform = ($id('srcPlatform')?.value || '').trim();

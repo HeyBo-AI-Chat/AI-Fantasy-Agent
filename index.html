@@ -58,167 +58,99 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
   <body>
-
-<main class="wrap">
-  <h2>AI Fantasy Agent</h2>
-
-  <!-- Season / Week -->
-<div class="stack">
-  <select id="season"></select>
-  <select id="week"></select>
-</div>
-
-<!-- Compute -->
-<button id="btnCompute" type="button" data-action="compute" class="btn btn-primary" style="width:100%">
-  Compute
-</button>
-
-<!-- Sources (this belongs BELOW Compute) -->
-<div class="stack" style="margin-top:1rem">
-  <label class="label">Select Platform</label>
-  <select id="srcPlatform"></select>
-
-  <input id="srcHandle" placeholder="Username / League ID" />
-
-  <textarea id="srcNotes" placeholder="Notes (optional)"></textarea>
-
-  <button id="btnAddSource" type="button" data-action="add-source" class="btn" style="width:100%">
-    Add Source
-  </button>
-</div>
-
-  <!-- LIST OF SAVED SOURCES -->
-  <div class="card">
-    <h3>Linked Sources</h3>
-    <div id="sourcesList">
-      <!-- Sources will be dynamically added here -->
-    </div>
-    <button id="btnReloadSources" class="btn muted">Reload</button>
-  </div>
-
-  <!-- ========= TAB PANELS ========= -->
-
-  <!-- DRAFT -->
-  <section id="tab-draft">
-    <div class="row spread">
-      <h3>Draft</h3>
-      <span id="draftCount" class="badge">0 players</span>
-    </div>
-    <div id="draftList" class="card">
-      <!-- Draft list will be dynamically added here -->
-    </div>
-  </section>
-
-  <!-- ROSTER -->
-  <section id="tab-roster" class="hidden">
-    <div class="row spread">
-      <h3>Roster</h3>
-      <span id="rosterCount" class="badge">0 players</span>
-    </div>
-    <div id="rosterList" class="card">
-        <!-- Roster list will be dynamically added here -->
-    </div>
-  </section>
-
-  <!-- LINEUP -->
-  <section id="tab-lineup" class="hidden">
-    <div class="row spread">
-      <h3>Lineup</h3>
-      <button id="btnSaveLineup" class="btn">Save Lineup</button>
-    </div>
-    <div class="card">
-      <h4>Starters</h4>
-      <div id="starters">
-        <!-- Starters will be dynamically added here -->
-      </div>
-    </div>
-    <div class="card">
-      <h4>Bench</h4>
-      <div id="bench">
-        <!-- Bench players will be dynamically added here -->
-      </div>
-    </div>
-  </section>
-
-  <!-- SCORES -->
-  <section id="tab-scores" class="hidden">
-    <div class="row spread">
-      <h3>Scores</h3>
-      <span id="scoresUpdated" class="badge">—</span>
-    </div>
-    <div class="card">
-      <div class="row spread">
-        <b>Team total</b>
-        <b id="teamTotal">0.0</b>
-      </div>
-    </div>
-    <div id="scoresList">
-      <!-- Scores will be dynamically added here -->
-    </div>
-  </section>
-
-  <!-- NEWS -->
-  <section id="tab-news" class="hidden">
-    <div class="row spread">
-      <h3>News & Injuries</h3>
-      <button id="btnRefreshNews" class="btn muted">Refresh</button>
-    </div>
-    <div id="newsList" class="card">
-      <!-- News items will be dynamically added here -->
-    </div>
-  </section>
-
-  <!-- AGENT -->
-  <section id="tab-agent" class="hidden">
-    <div class="row spread">
-      <h3>Agent</h3>
+  <header>AI Fantasy Agent</header>
+  <main>
+    <!-- Season / Week -->
+    <section class="section">
       <div class="row">
-        <button id="btnTTS" class="btn muted" title="Toggle speech output">🔈 Speak: Off</button>
-        <button id="btnMic" class="btn" title="Hold to talk">🎤 Hold</button>
+        <select id="season" aria-label="Season"></select>
+        <select id="week" aria-label="Week"></select>
       </div>
-    </div>
-    <textarea id="agentInput" class="input" placeholder="Ask Agent… e.g. Start/Sit for Week 3"></textarea>
-    <div class="card">
-      <div id="voiceStatus" class="badge">Mic idle</div>
-    </div>
-    <div id="agentReply" class="card">
-      <!-- Agent's reply will appear here -->
-    </div>
-  </section>
+      <div style="margin-top:12px">
+        <button id="btnCompute" type="button" data-action="compute">Compute</button>
+      </div>
+    </section>
 
-</main>
+    <!-- Sources -->
+    <section class="section">
+      <h2>Select Platform</h2>
+      <select id="srcPlatform"></select>
+      <input id="srcHandle" placeholder="Username / League ID" style="margin-top:8px" />
+      <textarea id="srcNotes" placeholder="Notes (optional)" rows="3" style="margin-top:8px"></textarea>
+      <div style="margin-top:12px">
+        <button id="btnAddSource" type="button" data-action="add-source">Add Source</button>
+      </div>
 
-<!-- BOTTOM NAVIGATION -->
-<nav id="tabs">
-  <button type="button" class="tabbtn active" data-t="draft">Draft</button>
-  <button type="button" class="tabbtn" data-t="roster">Roster</button>
-  <button type="button" class="tabbtn" data-t="lineup">Lineup</button>
-  <button type="button" class="tabbtn" data-t="scores">Scores</button>
-  <button type="button" class="tabbtn" data-t="news">News</button>
-  <button type="button" class="tabbtn" data-t="agent">Agent</button>
-</nav>
+      <div class="card" style="margin-top:16px">
+        <div class="row spread">
+          <h2 style="margin:0">Linked Sources</h2>
+          <button class="muted" id="reloadSources" type="button" onclick="loadSources()">Reload</button>
+        </div>
+        <div id="linkedSources" style="margin-top:10px"><i>None yet.</i></div>
+      </div>
+    </section>
 
-<!-- SCRIPTS -->
-<script src="./config.js" defer></script>
-<script src="./app.js" defer></script>
-<script>
-  // Initialize Service Worker
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker
-        .register('/sw.js', { scope: '/' })
-        .then(r => console.log('Service Worker registered with scope:', r.scope))
-        .catch(err => console.warn('Service Worker registration failed:', err));
-    });
-  }
+    <!-- Draft -->
+    <section id="tab-draft" class="section">
+      <div class="row spread">
+        <h2 style="margin:0">Draft</h2>
+        <span class="badge"><span id="draftCount">0</span> players</span>
+      </div>
+      <div id="draftList"></div>
+    </section>
 
-<!-- 1) Your per‑env config -->
-<script src="/config.js"></script>
+    <!-- Roster -->
+    <section id="tab-roster" class="section hidden">
+      <div class="row spread">
+        <h2 style="margin:0">Roster</h2>
+        <span class="badge"><span id="rosterCount">0</span> players</span>
+      </div>
+      <div id="rosterList"><i>No roster yet.</i></div>
+    </section>
 
-<!-- 2) Supabase library (CDN or your bundled version) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <!-- Lineup -->
+    <section id="tab-lineup" class="section hidden">
+      <h2>Lineup</h2>
+      <div class="card"><b>Starters</b><div id="starters" style="margin-top:6px"></div></div>
+      <div class="card"><b>Bench</b><div id="bench" style="margin-top:6px"></div></div>
+    </section>
 
-<!-- 3) Your app -->
-<script src="/app.js"></script>
+    <!-- Scores -->
+    <section id="tab-scores" class="section hidden">
+      <h2>Scores</h2>
+      <div id="scoresList"></div>
+    </section>
+
+    <!-- News -->
+    <section id="tab-news" class="section hidden">
+      <h2>News</h2>
+      <div id="newsList"></div>
+    </section>
+
+    <!-- Agent -->
+    <section id="tab-agent" class="section hidden">
+      <h2>Agent</h2>
+      <textarea id="agentInput" placeholder="Ask the agent…" rows="3"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button id="btnAsk" type="button">Ask</button>
+        <button id="btnTTS" type="button" class="muted">🔈 Speak: Off</button>
+      </div>
+      <div id="agentReply" class="card" style="margin-top:12px"><i>Ask something to get started.</i></div>
+    </section>
+  </main>
+
+  <!-- Bottom nav -->
+  <nav id="tabs">
+    <button type="button" class="tabbtn active" data-t="draft">Draft</button>
+    <button type="button" class="tabbtn" data-t="roster">Roster</button>
+    <button type="button" class="tabbtn" data-t="lineup">Lineup</button>
+    <button type="button" class="tabbtn" data-t="scores">Scores</button>
+    <button type="button" class="tabbtn" data-t="news">News</button>
+    <button type="button" class="tabbtn" data-t="agent">Agent</button>
+  </nav>
+
+  <!-- scripts: order matters -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
 </body>
-</html>

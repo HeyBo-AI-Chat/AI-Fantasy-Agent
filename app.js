@@ -1,3 +1,7 @@
+window.addEventListener('error', e => {
+  alert('JS error: ' + e.message);
+});
+console.log('app.js loaded');
 /* =========================
    Config & Supabase client
    ========================= */

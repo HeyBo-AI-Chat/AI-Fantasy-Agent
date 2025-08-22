@@ -167,7 +167,12 @@ async function loadSources() {
   list.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-del');
-      const { error: delErr } = await supabase.from('team_sources').delete().eq('id', id);
+      const { error: delErr } = await // in addSource(), right before supabase.from('team_sources')...
+console.log('addSource payload:', {
+  platform, handle, notes,
+  user_id: await getUserId(),
+  team_id: APP.TEAM_ID
+});supabase.from('team_sources').delete().eq('id', id);
       if (delErr) alert('Delete failed: ' + delErr.message);
       else loadSources();
     });

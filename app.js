@@ -1,15 +1,20 @@
 /* =========================
    Config & Supabase client
    ========================= */
-const APP = window.APP || {};
-const supaCreate = (window.supabase && window.supabase.createClient) || window.createClient;
+var APP = window.APP || {};
+
+var supaCreate =
+  (window.supabase && window.supabase.createClient) || window.createClient;
 
 if (!supaCreate) {
   console.warn('Supabase library not found. Include supabase-js.');
 }
 
-const supabase = (window._supabaseClient ||= supaCreate?.(APP.SUPABASE_URL, APP.SUPABASE_ANON));
-
+var supabase = window._supabaseClient || (
+  window._supabaseClient = (supaCreate
+    ? supaCreate(APP.SUPABASE_URL, APP.SUPABASE_ANON)
+    : null)
+);
 /* ==============
    Small helpers
    ============== */

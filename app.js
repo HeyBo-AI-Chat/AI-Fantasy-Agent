@@ -185,9 +185,11 @@ async function addSource() {
   }
 
   const user_id = await getUserId();
+  const team_id = APP.TEAM_ID || 'demo-team-1';  // <-- important
+
   const { error } = await supabase
     .from('team_sources')
-    .insert([{ user_id, platform, handle, notes }]);
+    .insert([{ user_id, team_id, platform, handle, notes }]);
 
   if (error) {
     alert('Save failed: ' + error.message);
@@ -199,7 +201,6 @@ async function addSource() {
 
   await loadSources();
 }
-
 /* ========================
    Draft / Roster / Lineup
    ======================== */

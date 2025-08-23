@@ -127,14 +127,20 @@
   <script>
   // ======== Config (your real project values) ========
   var APP = {
-    SUPABASE_URL:  "https://dcsxzyglwddqvqnuukzj.supabase.co",
-    SUPABASE_ANON: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjc3h6eWdsd2RkcXZxbnV1a3pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzQ0NTIsImV4cCI6MjA3MTIxMDQ1Mn0.WExhpsLwWZqtsLt5-zZS2tUihSaD-TFk7TkJmCzaLIs",
-    FUNCS:         "https://dcsxzyglwddqvqnuukzj.functions.supabase.co",
-    LEAGUE_ID:     "demo-league-1",
-    TEAM_ID:       "demo-team-1",
-    SEASON_DEFAULT: 2024,
-    WEEK_DEFAULT:    1
-  };
+  SUPABASE_URL: "https://dcsxzyglwddqvqnuukzj.supabase.co",
+  SUPABASE_ANON: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjc3h6eWdsd2RkcXZxbnV1a3pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzQ0NTIsImV4cCI6MjA3MTIxMDQ1Mn0.WExhpsLwWZqtsLt5-zZS2tUihSaD-TFk7TkJmCzaLIs",
+
+  FUNCS: "https://dcsxzyglwddqvqnuukzj.functions.supabase.co",
+
+  // ✅ real ids (UUIDs)
+  TEAM_ID: "a9d45759-2edc-4d1d-a66c-8af2147a373b",
+  // LEAGUE_ID is not used by the UI code you pasted, so it can be omitted or left as-is.
+
+  SEASON_DEFAULT: 2024,
+  WEEK_DEFAULT: 1,
+
+  OPENROUTER_PROVIDER: "openrouter"
+};
 
   // ======== Supabase client (Safari-safe) ========
   var supaCreate = (window.supabase && window.supabase.createClient) || window.createClient;
@@ -344,7 +350,7 @@
     var thinking = "Thinking…"; $id('agentReply').textContent = thinking; speak(thinking);
     try{
       var wk = getSelectedWeek();
-      var r = await fetch(APP.FUNCS+'/agent_router', { method:'POST', headers:hdrs, body:JSON.stringify({
+      var r = await fetch(APP.FUNCS+'/agent', { method:'POST', headers:hdrs, body:JSON.stringify({
         message:msg, sport:"nfl", season:Number(seasonSel && seasonSel.value || new Date().getFullYear()),
         week:(wk.type==='regular'?wk.value:null), round:(wk.type==='playoff'?wk.value:null), task:"reason"
       })});

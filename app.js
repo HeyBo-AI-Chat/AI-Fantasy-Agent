@@ -472,18 +472,11 @@ if ($id('btnAsk')) {
     
     try {
       const wk = getSelectedWeek();
-      const r = await fetch(`${APP.FUNCS}/agent_router`, {
-        method: 'POST',
-        headers: hdrs,
-        body: JSON.stringify({
-          message: msg,
-          sport: 'nfl',
-          season: Number(seasonSel?.value || new Date().getFullYear()),
-          week: wk.type === 'regular' ? wk.value : null,
-          round: wk.type === 'playoff' ? wk.value : null,
-          task: 'reason'
-        })
-      });
+      const r = await fetch(`${APP.FUNCS}/agent`, {   // was /agent_router
+  method: 'POST',
+  headers: hdrs,
+  body: JSON.stringify({ message: msg, sport:'nfl', season, week, round, task:'reason' })
+});
       
       const res = await r.json().catch(() => ({}));
       const reply = res.reply || res.message || res.text || 'No reply.';

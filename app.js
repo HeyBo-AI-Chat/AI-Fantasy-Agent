@@ -392,12 +392,12 @@ async function resolveTeamId(){
   const season = Number(seasonSel?.value) || (APP.SEASON_DEFAULT || new Date().getFullYear());
   const wk = getSelectedWeek();
   const payload = {
-    team_id: APP.TEAM_ID || 'demo-team-1',
-    season,
-    week: wk.type === 'regular' ? wk.value : null,
-    round: wk.type === 'playoff' ? wk.value : null,
-  };
-
+  team_id: await resolveTeamId(),
+  season,
+  week: (wk.type==='regular'? wk.value : null),
+  round: (wk.type==='playoff'? wk.value : null)
+};
+    
   const functionsBase = (APP && APP.FUNCS) || 
                        (APP?.SUPABASE_URL ? `${APP.SUPABASE_URL}/functions/v1` : '');
 

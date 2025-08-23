@@ -201,7 +201,12 @@ async function addSource() {
   const platform = ($id('srcPlatform')?.value || '').trim();
   const handle = ($id('srcHandle')?.value || '').trim();
   const notes = ($id('srcNotes')?.value || '').trim();
+const user_id = await getUserId();
+const team_id = await resolveTeamId();   // <-- instead of APP.TEAM_ID
 
+const ins = await supabase.from('team_sources')
+  .insert([{ user_id, team_id, platform, handle, notes }])
+  .select();
   if (!platform || !handle) {
     alert('Platform and Handle / League ID are required');
     return;

@@ -350,7 +350,7 @@
     var thinking = "Thinking…"; $id('agentReply').textContent = thinking; speak(thinking);
     try{
       var wk = getSelectedWeek();
-      var r = const r = await fetch(`${APP.FUNCS}/agent`, {   // was /agent_router
+      var r = await fetch(`${APP.FUNCS}/agent`, {   // was /agent_router
   method: 'POST',
   headers: hdrs,
   body: JSON.stringify({ message: msg, sport:'nfl', season, week, round, task:'reason' })

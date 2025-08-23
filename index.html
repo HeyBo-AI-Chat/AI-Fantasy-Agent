@@ -350,10 +350,11 @@
     var thinking = "Thinking…"; $id('agentReply').textContent = thinking; speak(thinking);
     try{
       var wk = getSelectedWeek();
-      var r = await fetch(APP.FUNCS+'/agent', { method:'POST', headers:hdrs, body:JSON.stringify({
-        message:msg, sport:"nfl", season:Number(seasonSel && seasonSel.value || new Date().getFullYear()),
-        week:(wk.type==='regular'?wk.value:null), round:(wk.type==='playoff'?wk.value:null), task:"reason"
-      })});
+      var r = const r = await fetch(`${APP.FUNCS}/agent`, {   // was /agent_router
+  method: 'POST',
+  headers: hdrs,
+  body: JSON.stringify({ message: msg, sport:'nfl', season, week, round, task:'reason' })
+});
       var res = {}; try { res = await r.json(); } catch(_){}
       var reply = res.reply || res.message || res.text || "No reply.";
       $id('agentReply').textContent = reply; speak(reply);

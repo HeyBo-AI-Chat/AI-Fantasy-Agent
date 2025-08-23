@@ -3,19 +3,14 @@ window.APP = {
   SUPABASE_URL: "https://dcsxzyglwddqvqnuukzj.supabase.co",
   SUPABASE_ANON: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjc3h6eWdsd2RkcXZxbnV1a3pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzQ0NTIsImV4cCI6MjA3MTIxMDQ1Mn0.WExhpsLwWZqtsLt5-zZS2tUihSaD-TFk7TkJmCzaLIs",
 
-  // the Edge Functions base (no trailing slash)
   FUNCS: "https://dcsxzyglwddqvqnuukzj.functions.supabase.co",
-  OPENROUTER_KEY: "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",
-  // defaults shown in the UI (use any season/week you want)
-  LEAGUE_ID: "demo-league-1",
-  TEAM_ID: "demo-team-1",
+
+  // ✅ real ids (UUIDs)
+  TEAM_ID: "a9d45759-2edc-4d1d-a66c-8af2147a373b",
+  // LEAGUE_ID is not used by the UI code you pasted, so it can be omitted or left as-is.
+
   SEASON_DEFAULT: 2024,
   WEEK_DEFAULT: 1,
 
-  // voice (optional; can stay empty until you add)
-  OPENROUTER_PROVIDER: "openrouter", // keep
+  OPENROUTER_PROVIDER: "openrouter"
 };
- raise notice 'LEAGUE_ID=%', v_league;
-  raise notice 'TEAM_ID=%',   v_team;
-  if v_owner is not null then
-    raise notice 'DEV_OWNER_ID(used for leagues.owner_id)=%', v_owner;

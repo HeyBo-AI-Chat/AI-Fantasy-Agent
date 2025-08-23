@@ -373,7 +373,17 @@ async function loadNews() {
 /* ==============
    Compute
    ============== */
-async function computeNow() {
+function looksLikeUUID(v){
+  return typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+}
+
+async function resolveTeamId(){
+  if (looksLikeUUID(APP.TEAM_ID)) return APP.TEAM_ID;
+  // fallback: pick the newest team so inserts still work
+  const r = await supabase.from('teams').select('id').order('created_at', {ascending:false}).limit(1);
+  return r?.data?.[0]?.id || null;
+}
+  async function computeNow() {
   const season = Number(seasonSel?.value) || (APP.SEASON_DEFAULT || new Date().getFullYear());
   const wk = getSelectedWeek();
   const payload = {
